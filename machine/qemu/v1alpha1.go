@@ -333,7 +333,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 			mounttag := fmt.Sprintf("fs%d", i+1)
 			qopts = append(qopts,
 				WithFsDevice(QemuFsDevLocal{
-					SecurityModel: QemuFsDevLocalSecurityModelPassthrough,
+					SecurityModel: QemuFsDevLocalSecurityModelMappedXattr,
 					Id:            hvirtioid,
 					Path:          vol.Spec.Source,
 				}),
