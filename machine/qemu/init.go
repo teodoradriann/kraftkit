@@ -470,7 +470,7 @@ func init() {
 	gob.Register(QemuFsDevLocal{})
 	// gob.Register(QemuFsDevProxy{})
 	// gob.Register(QemuFsDevSynth{})
-	gob.Register(QemuFsDevLocalSecurityModelPassthrough)
+	gob.Register(QemuFsDevLocalSecurityModelMappedXattr)
 
 	// CLI configuration
 	gob.Register(QemuConfig{})
