@@ -57,6 +57,10 @@ inputs:
   arch:
     description: Architecture to build for.
     required: false
+  build:
+    description: Toggle building the unikernel.
+    required: false
+    default: "true"
   plat:
     description: Platform to build for.
     required: false
@@ -207,6 +211,7 @@ runs:
         -e "INPUT_ARCH=${{ inputs.arch }}" \
         -e "INPUT_ARGS=${{ inputs.args }}" \
         -e "INPUT_AUTHS=${{ inputs.auths }}" \
+        -e "INPUT_BUILD=${{ inputs.build }}" \
         -e "INPUT_EXECUTE=${{ inputs.execute }}" \
         -e "INPUT_ROOTFS=${{ inputs.rootfs }}" \
         -e "INPUT_KRAFTFILE=${{ inputs.kraftfile }}" \
