@@ -6,10 +6,7 @@ package initrd
 
 import (
 	"context"
-	"io"
 	"os"
-
-	"kraftkit.sh/cpio"
 )
 
 type file struct {
@@ -24,7 +21,6 @@ func NewFromFile(_ context.Context, path string, opts ...InitrdOption) (Initrd, 
 	if err != nil {
 		return nil, err
 	}
-
 	defer fi.Close()
 
 	initrd := file{
@@ -38,26 +34,12 @@ func NewFromFile(_ context.Context, path string, opts ...InitrdOption) (Initrd, 
 		}
 	}
 
-	reader := cpio.NewReader(fi)
-
-	// Iterate through the files in the archive.
-	for {
-		_, _, err := reader.Next()
-		if err == io.EOF {
-			// end of cpio archive
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &initrd, nil
 }
 
 // Build implements Initrd.
 func (initrd *file) Name() string {
-	return "CPIO file"
+	return "file"
 }
 
 // Build implements Initrd.
