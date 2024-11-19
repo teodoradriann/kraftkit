@@ -6,6 +6,7 @@ package initrd
 
 import (
 	"context"
+	"fmt"
 	"os"
 )
 
@@ -17,11 +18,13 @@ type file struct {
 // NewFromFile accepts an input file which already represents a CPIO archive and
 // is provided as a mechanism for satisfying the Initrd interface.
 func NewFromFile(_ context.Context, path string, opts ...InitrdOption) (Initrd, error) {
-	fi, err := os.Open(path)
+	stat, err := os.Stat(path)
 	if err != nil {
 		return nil, err
 	}
-	defer fi.Close()
+	if stat.IsDir() {
+		return nil, fmt.Errorf("path %s is a directory, not a file", path)
+	}
 
 	initrd := file{
 		opts: InitrdOptions{},
