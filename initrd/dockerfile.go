@@ -178,6 +178,13 @@ func NewFromDockerfile(ctx context.Context, path string, opts ...InitrdOption) (
 		return nil, fmt.Errorf("file is not a Dockerfile")
 	}
 
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("could not check Dockerfile: %w", err)
+	} else if fi.IsDir() {
+		return nil, fmt.Errorf("supplied path %s is a directory not a Dockerfile", path)
+	}
+
 	initrd := dockerfile{
 		opts: InitrdOptions{
 			workdir: filepath.Dir(path),
