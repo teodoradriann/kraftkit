@@ -320,7 +320,7 @@ func (opts *RunOptions) parseKraftfileVolumes(ctx context.Context, project app.A
 			},
 		})
 
-		if err == nil && vol.Spec.Source != "" {
+		if err == nil && vol != nil && vol.Spec.Source != "" {
 			vol.Spec.Destination = volcfg.Destination()
 			machine.Spec.Volumes = append(machine.Spec.Volumes, *vol)
 			continue
