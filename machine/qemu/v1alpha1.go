@@ -302,26 +302,31 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 	}
 
 	if len(machine.Spec.Ports) > 0 {
+		mac := ""
+		hostfwds := make([]string, 0, len(machine.Spec.Ports))
 		for _, port := range machine.Spec.Ports {
-			mac := port.MacAddress
-			if mac == "" {
-				startMac = macaddr.IncrementMacAddress(startMac)
-				mac = startMac.String()
+			if port.MacAddress != "" {
+				mac = port.MacAddress
 			}
-
-			hostnetid := fmt.Sprintf("hostnet%d", hostnetCounter)
-			hostnetCounter++
-			qopts = append(qopts,
-				WithDevice(QemuDeviceVirtioNetPci{
-					Mac:    mac,
-					Netdev: hostnetid,
-				}),
-				WithNetDevice(QemuNetDevUser{
-					Id:      hostnetid,
-					Hostfwd: fmt.Sprintf("%s::%d-:%d", port.Protocol, port.HostPort, port.MachinePort),
-				}),
-			)
+			hostfwds = append(hostfwds, fmt.Sprintf("%s::%d-:%d", port.Protocol, port.HostPort, port.MachinePort))
 		}
+		if mac == "" {
+			startMac = macaddr.IncrementMacAddress(startMac)
+			mac = startMac.String()
+		}
+
+		hostnetid := fmt.Sprintf("hostnet%d", hostnetCounter)
+
+		qopts = append(qopts,
+			WithDevice(QemuDeviceVirtioNetPci{
+				Mac:    mac,
+				Netdev: hostnetid,
+			}),
+			WithNetDevice(QemuNetDevUser{
+				Id:      hostnetid,
+				Hostfwd: hostfwds,
+			}),
+		)
 	}
 
 	var fstab []string

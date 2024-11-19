@@ -362,23 +362,23 @@ func (nd QemuNetDevTap) String() string {
 // Configure a user mode network backend.
 type QemuNetDevUser struct {
 	// ID of the network device.
-	Id             string `json:"id,omitempty"`
-	Ipv4           bool   `json:"ipv4,omitempty"`
-	Net            string `json:"net,omitempty"`
-	Host           string `json:"host,omitempty"`
-	Ipv6           bool   `json:"ipv6,omitempty"`
-	Ipv6Net        string `json:"ipv6-net,omitempty"`
-	Ipv6Host       string `json:"ipv6-host,omitempty"`
-	Restrict       bool   `json:"restrict,omitempty"`
-	Hostname       string `json:"hostname,omitempty"`
-	Domainname     string `json:"domainname,omitempty"`
-	Tftp           string `json:"tftp,omitempty"`
-	TftpServerName string `json:"tftp_server_name,omitempty"`
-	Bootfile       string `json:"bootfile,omitempty"`
-	Hostfwd        string `json:"hostfwd,omitempty"`
-	Guestfwd       string `json:"guestfwd,omitempty"`
-	Smb            string `json:"smb,omitempty"`
-	Smbserver      string `json:"smbserver,omitempty"`
+	Id             string   `json:"id,omitempty"`
+	Ipv4           bool     `json:"ipv4,omitempty"`
+	Net            string   `json:"net,omitempty"`
+	Host           string   `json:"host,omitempty"`
+	Ipv6           bool     `json:"ipv6,omitempty"`
+	Ipv6Net        string   `json:"ipv6-net,omitempty"`
+	Ipv6Host       string   `json:"ipv6-host,omitempty"`
+	Restrict       bool     `json:"restrict,omitempty"`
+	Hostname       string   `json:"hostname,omitempty"`
+	Domainname     string   `json:"domainname,omitempty"`
+	Tftp           string   `json:"tftp,omitempty"`
+	TftpServerName string   `json:"tftp_server_name,omitempty"`
+	Bootfile       string   `json:"bootfile,omitempty"`
+	Hostfwd        []string `json:"hostfwd,omitempty"`
+	Guestfwd       string   `json:"guestfwd,omitempty"`
+	Smb            string   `json:"smb,omitempty"`
+	Smbserver      string   `json:"smbserver,omitempty"`
 }
 
 // String returns a QEMU command-line compatible netdev string with the format:
@@ -440,8 +440,10 @@ func (nd QemuNetDevUser) String() string {
 		ret.WriteString(nd.Bootfile)
 	}
 	if len(nd.Hostfwd) > 0 {
-		ret.WriteString(",hostfwd=")
-		ret.WriteString(nd.Hostfwd)
+		for _, rule := range nd.Hostfwd {
+			ret.WriteString(",hostfwd=")
+			ret.WriteString(rule)
+		}
 	}
 	if len(nd.Guestfwd) > 0 {
 		ret.WriteString(",guestfwd=")
