@@ -41,6 +41,7 @@ type GithubAction struct {
 
 	// Build flags
 	Arch   string `long:"arch" env:"INPUT_ARCH" usage:"Architecture to build for"`
+	Build  bool   `long:"build" env:"INPUT_BUILD" usage:"Toggle building the unikernel"`
 	Plat   string `long:"plat" env:"INPUT_PLAT" usage:"Platform to build for"`
 	Target string `long:"target" env:"INPUT_TARGET" usage:"Name of the target to build for"`
 
@@ -260,8 +261,10 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		return fmt.Errorf("could not pull project components: %w", err)
 	}
 
-	if err := opts.build(ctx); err != nil {
-		return fmt.Errorf("could not build unikernel: %w", err)
+	if opts.Build {
+		if err := opts.build(ctx); err != nil {
+			return fmt.Errorf("could not build unikernel: %w", err)
+		}
 	}
 
 	if opts.Execute {
