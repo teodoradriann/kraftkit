@@ -14,7 +14,7 @@ import (
 	"github.com/rancher/wrangler/pkg/signals"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 
 	"kraftkit.sh/cmdfactory"
 	"kraftkit.sh/config"
@@ -89,10 +89,6 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		workspace = "/github/workspace"
 	}
 
-	if newCtx, err := config.HydrateKraftCloudAuthInContext(ctx); err == nil {
-		ctx = newCtx
-	}
-
 	if err := opts.execScript(ctx, fmt.Sprintf("%s/.kraftkit/before.sh", workspace)); err != nil {
 		log.G(ctx).Errorf("could not run before script: %v", err)
 		os.Exit(1)
@@ -112,26 +108,8 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		log.G(ctx).SetLevel(logrus.TraceLevel)
 	}
 
-	ctx, err = packmanager.WithDefaultUmbrellaManagerInContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	cfg, err := config.NewDefaultKraftKitConfig()
-	if err != nil {
-		return err
-	}
-
-	cfgm, err := config.NewConfigManager(
-		cfg,
-		config.WithFile[config.KraftKit](config.DefaultConfigFile(), true),
-	)
-	if err != nil {
-		return err
-	}
-
 	if opts.RuntimeDir != "" {
-		cfgm.Config.RuntimeDir = opts.RuntimeDir
+		config.G[config.KraftKit](ctx).RuntimeDir = opts.RuntimeDir
 	}
 
 	if opts.Auths != "" {
@@ -140,16 +118,14 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 			return fmt.Errorf("could not parse auths: %w", err)
 		}
 
-		if cfgm.Config.Auth == nil {
-			cfgm.Config.Auth = make(map[string]config.AuthConfig)
+		if config.G[config.KraftKit](ctx).Auth == nil {
+			config.G[config.KraftKit](ctx).Auth = make(map[string]config.AuthConfig)
 		}
 
 		for domain, auth := range auths {
-			cfgm.Config.Auth[domain] = auth
+			config.G[config.KraftKit](ctx).Auth[domain] = auth
 		}
 	}
-
-	ctx = config.WithConfigManager(ctx, cfgm)
 
 	if len(opts.Workdir) == 0 {
 		opts.Workdir, err = os.Getwd()
@@ -161,11 +137,6 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 	// If the `run` attribute has been set, only execute this.
 	runScript := fmt.Sprintf("%s/.kraftkit/run.sh", workspace)
 	if _, err := os.Stat(runScript); err == nil {
-		// Write the config to disk based on any previous adjustments.
-		if err := cfgm.Write(true); err != nil {
-			return fmt.Errorf("synchronizing config: %w", err)
-		}
-
 		return opts.execScript(ctx, runScript)
 	}
 
@@ -302,7 +273,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfgm, err := config.NewConfigManager(cfg)
+	cfgm, err := config.NewConfigManager(
+		cfg,
+		config.WithFile[config.KraftKit](config.DefaultConfigFile(), true),
+	)
 	if err != nil {
 		fmt.Printf("could initialize config manager: %s", err)
 		os.Exit(1)
@@ -310,6 +284,11 @@ func main() {
 
 	// Set up the config manager in the context if it is available
 	ctx = config.WithConfigManager(ctx, cfgm)
+
+	// Attempt to set Unikraft Cloud config if possible
+	if newCtx, err := config.HydrateKraftCloudAuthInContext(ctx); err == nil {
+		ctx = newCtx
+	}
 
 	cmd, args, err := cmd.Find(os.Args[1:])
 	if err != nil {
@@ -336,6 +315,12 @@ func main() {
 	ctx = log.WithLogger(ctx, logger)
 
 	if err := bootstrap.InitKraftkit(ctx); err != nil {
+		log.G(ctx).Errorf("could not init kraftkit: %v", err)
+		os.Exit(1)
+	}
+
+	ctx, err = packmanager.WithDefaultUmbrellaManagerInContext(ctx)
+	if err != nil {
 		log.G(ctx).Errorf("could not init kraftkit: %v", err)
 		os.Exit(1)
 	}
