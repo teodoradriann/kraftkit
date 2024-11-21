@@ -8,6 +8,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"kraftkit.sh/config"
 	"kraftkit.sh/internal/cli/kraft/utils"
@@ -29,12 +30,15 @@ func (p *packagerCliKernel) String() string {
 
 // Packagable implements packager.
 func (p *packagerCliKernel) Packagable(ctx context.Context, opts *PkgOptions, args ...string) (bool, error) {
-	if len(opts.Kernel) > 0 && len(opts.Architecture) > 0 && len(opts.Platform) > 0 {
+	if len(opts.Kernel) > 0 && len(opts.Platform) > 0 {
+		if len(opts.Architecture) == 0 && strings.Contains(opts.Platform, "/") {
+			opts.Platform, opts.Architecture, _ = strings.Cut(opts.Platform, "/")
+		}
 		return true, nil
 	}
 
 	if len(opts.Kernel) > 0 {
-		log.G(ctx).Warn("--kernel flag set but must be used in conjunction with -m|--arch and -p|--plat")
+		log.G(ctx).Warn("--kernel flag set but must be used in conjunction with -m|--arch and/or -p|--plat")
 	}
 
 	return false, fmt.Errorf("cannot package without path to -k|-kernel, -m|--arch and -p|--plat")
