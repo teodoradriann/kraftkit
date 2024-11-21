@@ -34,9 +34,9 @@ type packager interface {
 // is used with the controller.
 func packagers() []packager {
 	return []packager{
+		&packagerCliKernel{},
 		&packagerKraftfileUnikraft{},
 		&packagerKraftfileRuntime{},
-		&packagerCliKernel{},
 		&packagerDockerfile{},
 	}
 }
