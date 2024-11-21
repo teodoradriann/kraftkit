@@ -48,6 +48,11 @@ type machineV1alpha1Service struct {
 	eopts []exec.ExecOption
 }
 
+var (
+	ErrCouldNotAttachQMPClient    = errors.New("could not attach QMP client")
+	ErrCouldNotQueryMachineViaQMP = errors.New("could not query machine via QMP")
+)
+
 // NewMachineV1alpha1Service implements kraftkit.sh/machine/platform.NewStrategyConstructor
 func NewMachineV1alpha1Service(ctx context.Context, opts ...any) (machinev1alpha1.MachineService, error) {
 	service := machineV1alpha1Service{}
@@ -892,7 +897,7 @@ func (service *machineV1alpha1Service) Get(ctx context.Context, machine *machine
 		exitCode = 1
 		return machine, nil
 	} else if err != nil {
-		return machine, fmt.Errorf("could not attach to QMP client: %v", err)
+		return machine, errors.Join(ErrCouldNotAttachQMPClient, err)
 	}
 
 	defer qmpClient.Close()
@@ -903,7 +908,7 @@ func (service *machineV1alpha1Service) Get(ctx context.Context, machine *machine
 		// We cannot amend the status at this point, even if the process is
 		// alive, since it is not an indicator of the state of the VM, only of the
 		// VMM.  So we return what we already know via LookupMachineConfig.
-		return machine, fmt.Errorf("could not query machine status via QMP: %v", err)
+		return machine, errors.Join(ErrCouldNotQueryMachineViaQMP, err)
 	}
 
 	// Map the QMP status to supported machine states
@@ -952,7 +957,9 @@ func (service *machineV1alpha1Service) List(ctx context.Context, machines *machi
 	// Iterate through each machine and grab the latest status
 	for _, machine := range cached {
 		machine, err := service.Get(ctx, &machine)
-		if err != nil {
+		// It's fine to list machines that are not running, so we ignore the error
+		// as long as it is not related to the QMP client.
+		if err != nil && !errors.Is(err, ErrCouldNotAttachQMPClient) && !errors.Is(err, ErrCouldNotQueryMachineViaQMP) {
 			machines.Items = cached
 			return machines, err
 		}
