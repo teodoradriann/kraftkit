@@ -62,10 +62,6 @@ func (runner *runnerKraftfileRuntime) Runnable(ctx context.Context, opts *RunOpt
 		}
 	}
 
-	if !app.IsWorkdirInitialized(opts.workdir) {
-		return false, fmt.Errorf("path is not project: %s", opts.workdir)
-	}
-
 	popts := []app.ProjectOption{
 		app.WithProjectWorkdir(opts.workdir),
 	}
