@@ -1,6 +1,6 @@
 module kraftkit.sh
 
-go 1.22.0
+go 1.23.3
 
 require (
 	api.zip v0.1.5
@@ -9,7 +9,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/acorn-io/baaah v0.0.0-20230522221318-afcc93619e30
-	github.com/anchore/stereoscope v0.0.3
+	github.com/anchore/stereoscope v0.0.9
 	github.com/briandowns/spinner v1.23.1
 	github.com/cavaliergopher/cpio v1.0.1
 	github.com/charmbracelet/bubbles v0.20.0

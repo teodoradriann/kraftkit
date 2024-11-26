@@ -22,7 +22,7 @@ TOOLS       ?= github-action \
                webinstall
 GOMOD       ?= kraftkit.sh
 IMAGE_TAG   ?= latest
-GO_VERSION  ?= 1.22
+GO_VERSION  ?= 1.23
 
 # Add a special version tag for pull requests
 ifneq ($(shell grep 'refs/pull' $(WORKDIR)/.git/FETCH_HEAD),)
