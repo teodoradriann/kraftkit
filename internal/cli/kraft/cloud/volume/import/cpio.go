@@ -131,7 +131,7 @@ func (r *okResponse) parse(resp []byte) error {
 }
 
 func (r *okResponse) waitForOK(conn *tls.Conn, errorMsg string) ([]byte, error) {
-	retErr := fmt.Errorf(errorMsg)
+	retErr := fmt.Errorf("%s", errorMsg)
 	for {
 		// A message can have at max:
 		// status - 4 bytes

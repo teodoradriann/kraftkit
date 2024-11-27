@@ -963,11 +963,11 @@ func (app *application) MarshalYAML() (interface{}, error) {
 	// 	ret["kconfig"] = app.configuration
 	// }
 
-	if app.targets != nil && len(app.targets) > 0 {
+	if len(app.targets) > 0 {
 		ret["targets"] = app.targets
 	}
 
-	if app.libraries != nil && len(app.libraries) > 0 {
+	if len(app.libraries) > 0 {
 		ret["libraries"] = app.libraries
 	}
 
@@ -983,7 +983,7 @@ func (app *application) MarshalYAML() (interface{}, error) {
 		ret["cmd"] = app.command
 	}
 
-	if app.volumes != nil && len(app.volumes) > 0 {
+	if len(app.volumes) > 0 {
 		ret["volumes"] = app.volumes
 	}
 

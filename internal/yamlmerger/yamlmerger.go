@@ -43,7 +43,7 @@ func RecursiveMerge(from, into *yaml.Node) error {
 				if nodesEqual(from.Content[i], into.Content[j]) {
 					found = true
 					if err := RecursiveMerge(from.Content[i+1], into.Content[j+1]); err != nil {
-						return fmt.Errorf("at key " + from.Content[i].Value + ": " + err.Error())
+						return fmt.Errorf("at key %s: %s", from.Content[i].Value, err.Error())
 					}
 					break
 				}

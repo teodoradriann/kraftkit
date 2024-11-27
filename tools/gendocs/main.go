@@ -79,9 +79,7 @@ func generateMarkdown(cmd *cobra.Command, dir string) error {
 		buf.WriteString(fmt.Sprintf("```\n%s\n```\n\n", cmd.Example))
 	}
 
-	if err := printOptions(buf, cmd); err != nil {
-		return err
-	}
+	printOptions(buf, cmd)
 
 	if hasSeeAlso(cmd) {
 		buf.WriteString("## See Also\n\n")
@@ -141,7 +139,7 @@ func generateMarkdown(cmd *cobra.Command, dir string) error {
 	return err
 }
 
-func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
+func printOptions(buf *bytes.Buffer, cmd *cobra.Command) {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
@@ -158,8 +156,6 @@ func printOptions(buf *bytes.Buffer, cmd *cobra.Command) error {
 		parentFlags.PrintDefaults()
 		buf.WriteString("```\n\n")
 	}
-
-	return nil
 }
 
 // Test to see if we have a reason to print See Also information in docs

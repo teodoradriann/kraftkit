@@ -259,7 +259,7 @@ func (uc UnikraftConfig) MarshalYAML() (interface{}, error) {
 		"version": uc.version,
 	}
 
-	if uc.kconfig != nil && len(uc.kconfig) > 0 {
+	if len(uc.kconfig) > 0 {
 		ret["kconfig"] = uc.kconfig
 	}
 

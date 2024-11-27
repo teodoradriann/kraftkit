@@ -559,7 +559,7 @@ func (lc LibraryConfig) MarshalYAML() (interface{}, error) {
 		ret["source"] = lc.source
 	}
 
-	if lc.kconfig != nil && len(lc.kconfig) > 0 {
+	if len(lc.kconfig) > 0 {
 		ret["kconfig"] = lc.kconfig
 	}
 

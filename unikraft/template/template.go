@@ -101,7 +101,7 @@ func (tc TemplateConfig) MarshalYAML() (interface{}, error) {
 	if len(tc.source) > 0 {
 		ret["source"] = tc.source
 	}
-	if tc.kconfig != nil && len(tc.kconfig) > 0 {
+	if len(tc.kconfig) > 0 {
 		ret["kconfig"] = tc.kconfig
 	}
 	if len(ret) == 0 {

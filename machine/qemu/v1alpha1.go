@@ -510,7 +510,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 		// Propagate the contents of the QEMU log file as an error
 		if errLog, err2 := os.ReadFile(qemuLogFile); err2 == nil {
-			err = errors.Join(fmt.Errorf(strings.TrimSpace(string(errLog))), err)
+			err = errors.Join(fmt.Errorf("%s", strings.TrimSpace(string(errLog))), err)
 		}
 
 		return machine, fmt.Errorf("could not start and wait for QEMU process: %v", err)
