@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/klauspost/cpuid"
+	"github.com/klauspost/cpuid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	machineapi "kraftkit.sh/api/machine/v1alpha1"
@@ -357,12 +357,18 @@ func (runner *runnerKraftfileRuntime) Prepare(ctx context.Context, opts *RunOpti
 	}
 
 	var kernelArgs []string
-	if !runtime.KConfig().AllNoOrUnset(
+	hasUkRandom := !runtime.KConfig().AllNoOrUnset(
 		"CONFIG_LIBUKRANDOM",
-		"CONFIG_LIBUKRANDOM_CMDLINE_INIT",
-		"CONFIG_LIBUKRANDOM_LCPU",
-	) && !cpuid.CPU.Rdrand() {
+	)
+	hasCmdlineSupport := !runtime.KConfig().AllNoOrUnset(
+		"CONFIG_LIBUKRANDOM_CMDLINE_SEED",
+	)
+	hasNoCpuRandomnessSupport := runtime.KConfig().AllNoOrUnset("CONFIG_LIBUKRANDOM_LCPU") ||
+		!(cpuid.CPU.Has(cpuid.RDRAND) || cpuid.CPU.Has(cpuid.RNDR))
+	if hasUkRandom && hasNoCpuRandomnessSupport && hasCmdlineSupport {
 		kernelArgs = append(kernelArgs, ukrandom.ParamRandomSeed.WithValue(ukrandom.NewRandomSeed()).String())
+	} else if hasUkRandom && hasNoCpuRandomnessSupport && !hasCmdlineSupport {
+		log.G(ctx).Warn("RDRAND is not supported by the host CPU to be able to run Unikraft v0.17.0 and greater with CPU-generated randomness")
 	}
 
 	machine.Spec.KernelArgs = kernelArgs
