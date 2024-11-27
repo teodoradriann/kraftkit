@@ -19,7 +19,7 @@ RUN set -xe; \
       pkg-config \
       git; \
     apt-get clean; \
-    go install mvdan.cc/gofumpt@v0.4.0; \
+    go install mvdan.cc/gofumpt@v0.7.0; \
     git config --global --add safe.directory /go/src/kraftkit.sh;
 
 # Install YTT and Cosign
