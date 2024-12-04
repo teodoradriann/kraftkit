@@ -46,7 +46,7 @@ type CreateOptions struct {
 	Memory              string                         `local:"true" long:"memory" short:"M" usage:"Specify the amount of memory to allocate (MiB increments)"`
 	Metro               string                         `noattribute:"true"`
 	Name                string                         `local:"true" long:"name" short:"n" usage:"Specify the name of the instance"`
-	Output              string                         `local:"true" long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"list"`
+	Output              string                         `local:"true" long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"list"`
 	Ports               []string                       `local:"true" long:"port" short:"p" usage:"Specify the port mapping between external to internal"`
 	RestartPolicy       *kcinstances.RestartPolicy     `noattribute:"true"`
 	Replicas            uint                           `local:"true" long:"replicas" short:"R" usage:"Number of replicas of the instance" default:"0"`

@@ -29,7 +29,7 @@ type LogsOptions struct {
 	Composefile string                `noattribute:"true"`
 	Follow      bool                  `long:"follow" short:"f" usage:"Follow log output"`
 	Metro       string                `noattribute:"true"`
-	Output      string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"table"`
+	Output      string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
 	Project     *compose.Project      `noattribute:"true"`
 	Tail        int                   `long:"tail" short:"t" usage:"Number of lines to show from the end of the logs" default:"-1"`
 	Token       string                `noattribute:"true"`
