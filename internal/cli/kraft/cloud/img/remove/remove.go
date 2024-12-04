@@ -134,11 +134,6 @@ func (opts *RemoveOptions) Run(ctx context.Context, args []string) error {
 	}
 
 	for _, arg := range args {
-		if strings.Contains(arg, "/") {
-			splits := strings.Split(arg, "/")
-			arg = splits[len(splits)-1]
-		}
-
 		log.G(ctx).Infof("removing %s", arg)
 
 		if err := opts.Client.WithMetro(opts.Metro).DeleteByName(ctx, arg); err != nil {
