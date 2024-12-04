@@ -23,7 +23,7 @@ import (
 
 type ListOptions struct {
 	Composefile string `noattribute:"true"`
-	Output      string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"table"`
+	Output      string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
 	Token       string `noattribute:"true"`
 }
 

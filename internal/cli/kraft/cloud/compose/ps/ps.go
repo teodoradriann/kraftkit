@@ -28,7 +28,7 @@ type PsOptions struct {
 	Client      kraftcloud.KraftCloud `noattribute:"true"`
 	Composefile string                `noattribute:"true"`
 	Metro       string                `noattribute:"true"`
-	Output      string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"table"`
+	Output      string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
 	Project     *compose.Project      `noattribute:"true"`
 	Token       string                `noattribute:"true"`
 }

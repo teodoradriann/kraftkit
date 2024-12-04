@@ -24,7 +24,7 @@ type GetOptions struct {
 	Client kraftcloud.KraftCloud `noattribute:"true"`
 	Metro  string                `noattribute:"true"`
 	Token  string                `noattribute:"true"`
-	Output string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"list"`
+	Output string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"list"`
 }
 
 // Status of a KraftCloud instance.

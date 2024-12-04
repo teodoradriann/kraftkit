@@ -24,7 +24,7 @@ import (
 
 type ListOptions struct {
 	Status bool   `long:"status" short:"s" usage:"Also display the status of the metros"`
-	Output string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"table"`
+	Output string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
 }
 
 func NewCmd() *cobra.Command {

@@ -33,7 +33,7 @@ type CreateOptions struct {
 	HardLimit   uint                       `local:"true" long:"hard-limit" short:"L" usage:"Set the hard limit for the service"`
 	Metro       string                     `noattribute:"true"`
 	Name        string                     `local:"true" long:"name" short:"n" usage:"Specify the name of the service"`
-	Output      string                     `local:"true" long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"table"`
+	Output      string                     `local:"true" long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
 	Token       string                     `noattribute:"true"`
 }
 

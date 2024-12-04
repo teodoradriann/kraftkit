@@ -22,7 +22,7 @@ import (
 )
 
 type QuotasOptions struct {
-	Output string `local:"true" long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"list"`
+	Output string `local:"true" long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"list"`
 
 	metro string
 	token string

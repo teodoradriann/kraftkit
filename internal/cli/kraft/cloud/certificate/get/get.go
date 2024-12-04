@@ -20,7 +20,7 @@ import (
 )
 
 type GetOptions struct {
-	Output string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"list"`
+	Output string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"list"`
 
 	metro string
 	token string
