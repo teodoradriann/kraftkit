@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type file struct {
@@ -35,6 +36,15 @@ func NewFromFile(_ context.Context, path string, opts ...InitrdOption) (Initrd, 
 		if err := opt(&initrd.opts); err != nil {
 			return nil, err
 		}
+	}
+
+	absDest, err := filepath.Abs(filepath.Clean(initrd.opts.output))
+	if err != nil {
+		return nil, fmt.Errorf("getting absolute path of destination: %w", err)
+	}
+
+	if absDest == stat.Name() {
+		return nil, fmt.Errorf("CPIO archive path is the same as the source path, this is not allowed as it creates corrupted archives")
 	}
 
 	return &initrd, nil
