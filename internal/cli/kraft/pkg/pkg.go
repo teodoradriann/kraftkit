@@ -136,7 +136,7 @@ func Pkg(ctx context.Context, opts *PkgOptions, args ...string) ([]pack.Package,
 
 	err = paramodel.Start()
 	if err != nil {
-		return nil, fmt.Errorf("could not wait for image be available: %w", err)
+		return nil, fmt.Errorf("could not wait for image to be available: %w", err)
 	}
 
 	if err == nil && len(exists) > 0 {
@@ -257,7 +257,7 @@ func NewCmd() *cobra.Command {
 		`, "`"),
 		Example: heredoc.Doc(`
 			# Package a project as an OCI archive and embed the target's KConfig.
-			$ kraft pkg --as oci --name unikraft.org/nginx:latest	
+			$ kraft pkg --as oci --name unikraft.org/nginx:latest
 		`),
 		Annotations: map[string]string{
 			cmdfactory.AnnotationHelpGroup: "pkg",

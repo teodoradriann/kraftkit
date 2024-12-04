@@ -167,7 +167,7 @@ func Create(ctx context.Context, opts *CreateOptions, args ...string) (*kcclient
 
 		err = paramodel.Start()
 		if err != nil {
-			return nil, nil, fmt.Errorf("could not wait for image be available: %w", err)
+			return nil, nil, fmt.Errorf("could not wait for image to be available: %w", err)
 		}
 	} else {
 		imageResp, err := opts.Client.Images().WithMetro(opts.Metro).Get(ctx, opts.Image)
