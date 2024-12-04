@@ -26,8 +26,10 @@ import (
 	"kraftkit.sh/tui/processtree"
 	"kraftkit.sh/tui/selection"
 	"kraftkit.sh/unikraft"
+	"kraftkit.sh/unikraft/export/v0/ukrandom"
 	"kraftkit.sh/unikraft/target"
 
+	"github.com/klauspost/cpuid/v2"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -337,6 +339,23 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 			},
 		})
 	}
+
+	var kernelArgs []string
+	hasUkRandom := !targ.KConfig().AllNoOrUnset(
+		"CONFIG_LIBUKRANDOM",
+	)
+	hasCmdlineSupport := !targ.KConfig().AllNoOrUnset(
+		"CONFIG_LIBUKRANDOM_CMDLINE_SEED",
+	)
+	hasNoCpuRandomnessSupport := targ.KConfig().AllNoOrUnset("CONFIG_LIBUKRANDOM_LCPU") ||
+		!(cpuid.CPU.Has(cpuid.RDRAND) || cpuid.CPU.Has(cpuid.RNDR))
+	if hasUkRandom && hasNoCpuRandomnessSupport && hasCmdlineSupport {
+		kernelArgs = append(kernelArgs, ukrandom.ParamRandomSeed.WithValue(ukrandom.NewRandomSeed()).String())
+	} else if hasUkRandom && hasNoCpuRandomnessSupport && !hasCmdlineSupport {
+		log.G(ctx).Warn("RDRAND is not supported by the host CPU to be able to run Unikraft v0.17.0 and greater with CPU-generated randomness")
+	}
+
+	machine.Spec.KernelArgs = kernelArgs
 
 	switch v := selected.Metadata().(type) {
 	case *ocispec.Image:

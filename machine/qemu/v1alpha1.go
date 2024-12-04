@@ -20,7 +20,6 @@ import (
 
 	zip "api.zip"
 	"github.com/acorn-io/baaah/pkg/merr"
-	"github.com/klauspost/cpuid"
 	"github.com/mitchellh/mapstructure"
 	goprocess "github.com/shirou/gopsutil/v3/process"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +32,6 @@ import (
 	"kraftkit.sh/exec"
 	"kraftkit.sh/internal/logtail"
 	"kraftkit.sh/internal/retrytimeout"
-	"kraftkit.sh/log"
 	"kraftkit.sh/machine/network/macaddr"
 	"kraftkit.sh/machine/qemu/qmp"
 	qmpapi "kraftkit.sh/machine/qemu/qmp/v7alpha2"
@@ -421,10 +419,9 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		if machine.Spec.Emulation {
 			onFeatures := QemuCPUFeatures{QemuCPUFeaturePdpe1gb}
 
-			if qemuVersion.LessThan(QemuVersion8_0_0) {
-				log.G(ctx).Warn("QEMU version is less than 8.0.0, consider updating to be able to emulate Unikraft v0.17.0 and greater")
-			} else {
-				onFeatures = append(onFeatures, QemuCPUFeatureRdrand, QemuCPUFeatureRdseed)
+			onFeatures = append(onFeatures, QemuCPUFeatureRdrand)
+			if qemuVersion.GreaterThanEqual(QemuVersion8_0_0) {
+				onFeatures = append(onFeatures, QemuCPUFeatureRdseed)
 			}
 
 			qopts = append(qopts,
@@ -438,10 +435,6 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 				}),
 			)
 		} else {
-			if !cpuid.CPU.Rdrand() || !cpuid.CPU.Rdseed() {
-				log.G(ctx).Warn("RDRAND and RDSEED are not supported by the host CPU, try rerunning with emulation '-W' to be able to run Unikraft v0.17.0 and greater with hardware randomization")
-			}
-
 			qopts = append(qopts,
 				WithEnableKVM(true),
 				WithMachine(QemuMachine{

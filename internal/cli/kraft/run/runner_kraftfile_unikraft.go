@@ -11,12 +11,15 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/klauspost/cpuid/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	machineapi "kraftkit.sh/api/machine/v1alpha1"
 	volumeapi "kraftkit.sh/api/volume/v1alpha1"
 	"kraftkit.sh/config"
+	"kraftkit.sh/log"
 	"kraftkit.sh/unikraft/app"
+	"kraftkit.sh/unikraft/export/v0/ukrandom"
 	"kraftkit.sh/unikraft/target"
 )
 
@@ -147,6 +150,19 @@ func (runner *runnerKraftfileUnikraft) Prepare(ctx context.Context, opts *RunOpt
 		"CONFIG_LIBVFSCORE_AUTOMOUNT_CI_EINITRD",
 	)
 
+	hasUkRandom := !t.KConfig().AllNoOrUnset(
+		"CONFIG_LIBUKRANDOM",
+	)
+	hasCmdlineSupport := !t.KConfig().AllNoOrUnset(
+		"CONFIG_LIBUKRANDOM_CMDLINE_SEED",
+	)
+	hasNoCpuRandomnessSupport := t.KConfig().AllNoOrUnset("CONFIG_LIBUKRANDOM_LCPU") ||
+		!(cpuid.CPU.Has(cpuid.RDRAND) || cpuid.CPU.Has(cpuid.RNDR))
+	randomCmdLine := hasUkRandom && hasNoCpuRandomnessSupport && hasCmdlineSupport
+	if hasUkRandom && hasNoCpuRandomnessSupport && !hasCmdlineSupport {
+		log.G(ctx).Warn("RDRAND is not supported by the host CPU to be able to run Unikraft v0.17.0 and greater with CPU-generated randomness")
+	}
+
 	if runner.project.Rootfs() != "" && opts.Rootfs == "" && noEmbedded {
 		opts.Rootfs = runner.project.Rootfs()
 	}
@@ -178,6 +194,10 @@ func (runner *runnerKraftfileUnikraft) Prepare(ctx context.Context, opts *RunOpt
 			continue
 		}
 		appArgs = append(appArgs, arg)
+	}
+
+	if randomCmdLine {
+		kernelArgs = append(kernelArgs, ukrandom.ParamRandomSeed.WithValue(ukrandom.NewRandomSeed()).String())
 	}
 
 	machine.Spec.KernelArgs = kernelArgs
