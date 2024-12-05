@@ -40,7 +40,7 @@ jobs:
             --skip=validate
           goreleaser release \
             --config goreleaser-staging.yaml \
-            --rm-dist \
+            --clean \
             --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
