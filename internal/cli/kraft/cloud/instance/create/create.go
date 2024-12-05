@@ -566,11 +566,11 @@ func Create(ctx context.Context, opts *CreateOptions, args ...string) (*kcclient
 				if len(opts.Certificate) > i {
 					if utils.IsUUID(opts.Certificate[i]) {
 						domainCreate.Certificate = &kcservices.CreateRequestDomainCertificate{
-							UUID: opts.Certificate[i],
+							UUID: &opts.Certificate[i],
 						}
 					} else {
 						domainCreate.Certificate = &kcservices.CreateRequestDomainCertificate{
-							Name: opts.Certificate[i],
+							Name: &opts.Certificate[i],
 						}
 					}
 				}
