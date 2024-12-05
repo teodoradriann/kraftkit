@@ -36,7 +36,7 @@ jobs:
             --privileged \
             --name "buildkitd_${GITHUB_RUN_ID}_${SUFFIX}" \
             -v /run/buildkit:/run/buildkit:rw \
-            moby/buildkit:v0.14.1;
+            moby/buildkit:v0.17.2;
           timeout 60 bash -c 'while [ ! -S "/run/buildkit/buildkitd.sock" ]; do sleep 1; done'
           sudo chmod 666 /run/buildkit/buildkitd.sock;
         env:
@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.22.3
+          go-version: 1.23.3
           cache: false
 
       - name: Set Go variables
@@ -90,7 +90,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.3
+          go-version: 1.23.3
           cache: false
 
       - name: Set Go variables
@@ -141,7 +141,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.3
+          go-version: 1.23.3
           cache: false
 
       - name: Set Go variables

@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.22.3
+          go-version: 1.23.3
           cache: false
 
       - name: Set Go variables
@@ -61,14 +61,14 @@ jobs:
         if: success() || failure()  # run this step even if the previous one failed
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.56.2
+          version: v1.62.2
           args: --timeout=30m --no-config --disable-all --enable=gofumpt --out-format=colored-line-number --build-tags "containers_image_storage_stub,containers_image_openpgp"
           skip-cache: true
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.56.2
+          version: v1.62.2
           args: --timeout=30m --out-format=colored-line-number --build-tags "containers_image_storage_stub,containers_image_openpgp"
           skip-cache: true
 

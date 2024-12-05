@@ -1,8 +1,6 @@
 module kraftkit.sh/tools/go-generate-qemu-devices
 
-go 1.22.0
-
-toolchain go1.22.2
+go 1.23.3
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0

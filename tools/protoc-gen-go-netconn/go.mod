@@ -1,6 +1,6 @@
 module kraftkit.sh/tools/protoc-gen-go-netconn
 
-go 1.22
+go 1.23.3
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0

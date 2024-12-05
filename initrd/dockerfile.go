@@ -10,6 +10,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net"
 	"os"
 	"path/filepath"
@@ -285,7 +286,7 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			Logger:  printf,
 			ContainerRequest: testcontainers.ContainerRequest{
 				AlwaysPullImage: true,
-				Image:           "moby/buildkit:v0.14.1",
+				Image:           "moby/buildkit:v0.17.2",
 				WaitingFor:      wait.ForLog(fmt.Sprintf("running server on [::]:%d", port)),
 				Privileged:      true,
 				ExposedPorts:    []string{fmt.Sprintf("%d:%d/tcp", port, port)},
@@ -528,6 +529,56 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 
 	tarReader := tar.NewReader(tarArchive)
 
+	type inodeCount struct {
+		Count int
+		Inode int32
+	}
+	fileCount := map[string]inodeCount{}
+
+	// Pass once to count links
+	for {
+		tarHeader, err := tarReader.Next()
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return "", fmt.Errorf("could not read tar header: %w", err)
+		}
+
+		if tarHeader.Typeflag == tar.TypeLink {
+			if _, ok := fileCount[tarHeader.Linkname]; !ok {
+				fileCount[tarHeader.Linkname] = inodeCount{
+					Count: 1,
+					Inode: rand.Int32(),
+				}
+			} else {
+				fileCount[tarHeader.Linkname] = inodeCount{
+					Count: fileCount[tarHeader.Linkname].Count + 1,
+					Inode: fileCount[tarHeader.Linkname].Inode,
+				}
+			}
+		} else if tarHeader.Typeflag == tar.TypeReg {
+			if _, ok := fileCount[tarHeader.Name]; !ok {
+				fileCount[tarHeader.Name] = inodeCount{
+					Count: 1,
+					Inode: rand.Int32(),
+				}
+			} else {
+				fileCount[tarHeader.Name] = inodeCount{
+					Count: fileCount[tarHeader.Name].Count + 1,
+					Inode: fileCount[tarHeader.Linkname].Inode,
+				}
+			}
+		}
+	}
+
+	_, err = tarArchive.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("could not seek to start of tarball: %w", err)
+	}
+
+	tarReader = tar.NewReader(tarArchive)
+
 	for {
 		tarHeader, err := tarReader.Next()
 		if err == io.EOF {
@@ -545,9 +596,6 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			ModTime: tarHeader.FileInfo().ModTime(),
 			Size:    tarHeader.FileInfo().Size(),
 		}
-
-		// Populate platform specific information
-		populateCPIO(tarHeader.FileInfo(), cpioHeader)
 
 		switch tarHeader.Typeflag {
 		case tar.TypeBlock:
@@ -595,6 +643,10 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			cpioHeader.Mode |= cpio.TypeReg
 			cpioHeader.Linkname = tarHeader.Linkname
 			cpioHeader.Size = 0
+			if _, ok := fileCount[tarHeader.Linkname]; ok {
+				cpioHeader.Links = fileCount[tarHeader.Linkname].Count
+				cpioHeader.Inode = int64(fileCount[tarHeader.Linkname].Inode)
+			}
 			if err := cpioWriter.WriteHeader(cpioHeader); err != nil {
 				return "", fmt.Errorf("could not write CPIO header: %w", err)
 			}
@@ -608,6 +660,10 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			cpioHeader.Mode |= cpio.TypeReg
 			cpioHeader.Linkname = tarHeader.Linkname
 			cpioHeader.Size = tarHeader.FileInfo().Size()
+			if _, ok := fileCount[tarHeader.Name]; ok {
+				cpioHeader.Links = fileCount[tarHeader.Name].Count
+				cpioHeader.Inode = int64(fileCount[tarHeader.Name].Inode)
+			}
 
 			if err := cpioWriter.WriteHeader(cpioHeader); err != nil {
 				return "", fmt.Errorf("could not write CPIO header: %w", err)

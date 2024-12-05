@@ -3,7 +3,7 @@
 # Licensed under the BSD-3-Clause License (the "License").
 # You may not use this file except in compliance with the License.
 
-ARG GO_VERSION=1.22.3
+ARG GO_VERSION=1.23.3
 
 FROM golang:${GO_VERSION}-bookworm AS kraftkit-full
 
@@ -19,7 +19,7 @@ RUN set -xe; \
       pkg-config \
       git; \
     apt-get clean; \
-    go install mvdan.cc/gofumpt@v0.4.0; \
+    go install mvdan.cc/gofumpt@v0.7.0; \
     git config --global --add safe.directory /go/src/kraftkit.sh;
 
 # Install YTT and Cosign
@@ -34,7 +34,7 @@ RUN set -xe; \
 
 WORKDIR /go/src/kraftkit.sh
 
-COPY --from=ghcr.io/goreleaser/goreleaser-cross:v1.22.3 /usr/bin/goreleaser /usr/bin/
+COPY --from=ghcr.io/goreleaser/goreleaser-cross:v1.23.3 /usr/bin/goreleaser /usr/bin/
 
 ENV DOCKER=
 ENV GOROOT=/usr/local/go

@@ -75,7 +75,7 @@ func (c *Container) Status() (Status, error) {
 func (c *Container) State() (*State, error) {
 	c.m.Lock()
 	defer c.m.Unlock()
-	return c.currentState()
+	return c.currentState(), nil
 }
 
 // Start starts a process inside the container. Returns error if process fails
@@ -394,11 +394,9 @@ func (c *Container) updateState(process parentProcess) (*State, error) {
 	if process != nil {
 		c.initProcess = process
 	}
-	state, err := c.currentState()
-	if err != nil {
-		return nil, err
-	}
-	err = c.saveState(state)
+	state := c.currentState()
+
+	err := c.saveState(state)
 	if err != nil {
 		return nil, err
 	}
@@ -473,7 +471,7 @@ func (c *Container) runType() Status {
 	return Running
 }
 
-func (c *Container) currentState() (*State, error) {
+func (c *Container) currentState() *State {
 	var (
 		startTime uint64
 		pid       = -1
@@ -507,7 +505,7 @@ func (c *Container) currentState() (*State, error) {
 			}
 		}
 	}
-	return state, nil
+	return state
 }
 
 func (c *Container) currentOCIState() (*specs.State, error) {

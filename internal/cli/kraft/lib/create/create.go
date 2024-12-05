@@ -254,7 +254,7 @@ func (opts *CreateOptions) Run(ctx context.Context, args []string) error {
 		}
 
 		if len(errs) > 0 {
-			return fmt.Errorf(strings.Join(errs, "\n"))
+			return fmt.Errorf("%s", strings.Join(errs, "\n"))
 		}
 
 		if len(opts.LibraryName) == 0 {
