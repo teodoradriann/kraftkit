@@ -51,7 +51,7 @@ jobs:
           goreleaser release \
             --config goreleaser-stable.yaml \
             --clean \
-            --skip-validate
+            --skip=validate
           fury push "$(ls ./dist/kraftkit_*_linux_amd64.deb)" --quiet --account "$FURY_USER" --api-token "$FURY_TOKEN"
           fury push "$(ls ./dist/kraftkit_*_linux_arm64.deb)" --quiet --account "$FURY_USER" --api-token "$FURY_TOKEN"
           fury push "$(ls ./dist/kraftkit_*_linux_amd64.rpm)" --quiet --account "$FURY_USER" --api-token "$FURY_TOKEN"

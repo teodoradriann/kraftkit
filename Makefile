@@ -129,7 +129,7 @@ all: help
 build: CHANNEL ?= staging
 build: $(WORKDIR)/goreleaser-$(CHANNEL).yaml
 build: ## Build all KraftKit binary artifacts.
-	$(GORELEASER) build --config $(WORKDIR)/goreleaser-$(CHANNEL).yaml --clean --skip-validate
+	$(GORELEASER) build --config $(WORKDIR)/goreleaser-$(CHANNEL).yaml --clean --skip=validate
 
 $(WORKDIR)/goreleaser-$(CHANNEL).yaml: CHANNEL ?= staging
 $(WORKDIR)/goreleaser-$(CHANNEL).yaml:
