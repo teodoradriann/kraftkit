@@ -38,6 +38,10 @@ func NewFromFile(_ context.Context, path string, opts ...InitrdOption) (Initrd, 
 		}
 	}
 
+	if !filepath.IsAbs(initrd.path) {
+		initrd.path = filepath.Join(initrd.opts.workdir, initrd.path)
+	}
+
 	absDest, err := filepath.Abs(filepath.Clean(initrd.opts.output))
 	if err != nil {
 		return nil, fmt.Errorf("getting absolute path of destination: %w", err)

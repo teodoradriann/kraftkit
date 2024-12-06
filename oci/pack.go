@@ -824,6 +824,7 @@ func (ocipack *ociPackage) Unpack(ctx context.Context, dir string) error {
 		ocipack.initrd, err = initrd.New(ctx,
 			initrdPath,
 			initrd.WithArchitecture(image.Architecture),
+			initrd.WithWorkdir(dir),
 		)
 		if err != nil {
 			return err

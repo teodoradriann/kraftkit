@@ -179,17 +179,8 @@ func NewFromDockerfile(ctx context.Context, path string, opts ...InitrdOption) (
 		return nil, fmt.Errorf("file is not a Dockerfile")
 	}
 
-	fi, err := os.Stat(path)
-	if err != nil {
-		return nil, fmt.Errorf("could not check Dockerfile: %w", err)
-	} else if fi.IsDir() {
-		return nil, fmt.Errorf("supplied path %s is a directory not a Dockerfile", path)
-	}
-
 	initrd := dockerfile{
-		opts: InitrdOptions{
-			workdir: filepath.Dir(path),
-		},
+		opts:       InitrdOptions{},
 		dockerfile: path,
 	}
 
@@ -197,6 +188,22 @@ func NewFromDockerfile(ctx context.Context, path string, opts ...InitrdOption) (
 		if err := opt(&initrd.opts); err != nil {
 			return nil, err
 		}
+	}
+
+	if !filepath.IsAbs(initrd.dockerfile) {
+		initrd.dockerfile = filepath.Join(initrd.opts.workdir, initrd.dockerfile)
+		if initrd.opts.workdir == "" {
+			initrd.opts.workdir = filepath.Dir(initrd.dockerfile)
+		}
+	} else {
+		initrd.opts.workdir = filepath.Dir(initrd.dockerfile)
+	}
+
+	fi, err := os.Stat(initrd.dockerfile)
+	if err != nil {
+		return nil, fmt.Errorf("could not check Dockerfile: %w", err)
+	} else if fi.IsDir() {
+		return nil, fmt.Errorf("supplied path %s is a directory not a Dockerfile", initrd.dockerfile)
 	}
 
 	return &initrd, nil

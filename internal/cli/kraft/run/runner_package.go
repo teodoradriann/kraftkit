@@ -304,7 +304,9 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 	if opts.Rootfs == "" && targ.Initrd() != nil {
 		ramfs = targ.Initrd()
 	} else if len(opts.Rootfs) > 0 {
-		ramfs, err = initrd.New(ctx, opts.Rootfs)
+		ramfs, err = initrd.New(ctx, opts.Rootfs,
+			initrd.WithWorkdir(opts.workdir),
+		)
 		if err != nil {
 			return err
 		}

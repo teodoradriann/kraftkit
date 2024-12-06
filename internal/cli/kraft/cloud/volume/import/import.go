@@ -40,6 +40,7 @@ type ImportOptions struct {
 	Source         string `local:"true" long:"source" short:"s" usage:"Path to the data source (directory, Dockerfile, Docker link, cpio file)" default:"."`
 	Timeout        uint64 `local:"true" long:"timeout" short:"t" usage:"Timeout for the import process in seconds when unresponsive" default:"10"`
 	VolID          string `local:"true" long:"volume" short:"v" usage:"Identifier of an existing volume (name or UUID)"`
+	Workdir        string `local:"true" long:"workdir" short:"w" usage:"Working directory for the import process"`
 }
 
 const volimportPort uint16 = 42069
@@ -123,7 +124,7 @@ func importVolumeData(ctx context.Context, opts *ImportOptions) (retErr error) {
 
 	paramodel, err := processTree(ctx, "Packaging source as a CPIO archive",
 		func(ctx context.Context) error {
-			cpioPath, cpioSize, err = buildCPIO(ctx, opts.Source)
+			cpioPath, cpioSize, err = buildCPIO(ctx, opts.Workdir, opts.Source)
 			return err
 		},
 	)
