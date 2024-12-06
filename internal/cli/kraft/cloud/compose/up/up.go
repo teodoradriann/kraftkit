@@ -37,17 +37,20 @@ import (
 )
 
 type UpOptions struct {
-	Auth        *config.AuthConfig    `noattribute:"true"`
-	Client      kraftcloud.KraftCloud `noattribute:"true"`
-	Composefile string                `noattribute:"true"`
-	Detach      bool                  `local:"true" long:"detach" short:"d" usage:"Run the services in the background"`
-	Metro       string                `noattribute:"true"`
-	NoStart     bool                  `noattribute:"true"`
-	NoBuild     bool                  `local:"true" long:"no-build" usage:"Do not build the services before starting them"`
-	Project     *compose.Project      `noattribute:"true"`
-	Runtimes    []string              `long:"runtime" usage:"Alternative runtime to use when packaging a service"`
-	Token       string                `noattribute:"true"`
-	Wait        time.Duration         `local:"true" long:"wait" short:"w" usage:"Timeout to wait for the instance to start (ms/s/m/h)"`
+	Auth             *config.AuthConfig       `noattribute:"true"`
+	Client           kraftcloud.KraftCloud    `noattribute:"true"`
+	Composefile      string                   `noattribute:"true"`
+	Detach           bool                     `local:"true" long:"detach" short:"d" usage:"Run the services in the background"`
+	Metro            string                   `noattribute:"true"`
+	NoStart          bool                     `noattribute:"true"`
+	NoBuild          bool                     `local:"true" long:"no-build" usage:"Do not build the services before starting them"`
+	Project          *compose.Project         `noattribute:"true"`
+	Rollout          *create.RolloutStrategy  `noattribute:"true"`
+	RolloutQualifier *create.RolloutQualifier `noattribute:"true"`
+	RolloutWait      time.Duration            `local:"true" long:"rollout-wait" usage:"Time to wait before performing rolling out action (ms/s/m/h)" default:"10s"`
+	Runtimes         []string                 `long:"runtime" usage:"Alternative runtime to use when packaging a service"`
+	Token            string                   `noattribute:"true"`
+	Wait             time.Duration            `local:"true" long:"wait" short:"w" usage:"Timeout to wait for the instance to start (ms/s/m/h)"`
 }
 
 func NewCmd() *cobra.Command {
@@ -327,20 +330,23 @@ func Up(ctx context.Context, opts *UpOptions, args ...string) error {
 		}
 
 		instResp, _, err = create.Create(ctx, &create.CreateOptions{
-			Auth:         opts.Auth,
-			Client:       opts.Client,
-			Domain:       domains,
-			Entrypoint:   service.Entrypoint,
-			Env:          env,
-			Image:        service.Image,
-			Memory:       memory,
-			Metro:        opts.Metro,
-			Name:         name,
-			Services:     services,
-			Start:        false,
-			Token:        opts.Token,
-			WaitForImage: !opts.NoBuild,
-			Volumes:      volumes,
+			Auth:             opts.Auth,
+			Client:           opts.Client,
+			Domain:           domains,
+			Entrypoint:       service.Entrypoint,
+			Env:              env,
+			Image:            service.Image,
+			Memory:           memory,
+			Metro:            opts.Metro,
+			Name:             name,
+			Rollout:          opts.Rollout,
+			RolloutQualifier: opts.RolloutQualifier,
+			RolloutWait:      opts.RolloutWait,
+			Services:         services,
+			Start:            false,
+			Token:            opts.Token,
+			WaitForImage:     !opts.NoBuild,
+			Volumes:          volumes,
 		}, service.Command...)
 		if err != nil {
 			return fmt.Errorf("creating instance: %w", err)
