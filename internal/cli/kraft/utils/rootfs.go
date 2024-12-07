@@ -28,7 +28,8 @@ func BuildRootfs(ctx context.Context, workdir, rootfs string, compress bool, arc
 	var cmds []string
 	var envs []string
 
-	ramfs, err := initrd.New(ctx, rootfs,
+	ramfs, err := initrd.New(ctx,
+		rootfs,
 		initrd.WithWorkdir(workdir),
 		initrd.WithOutput(filepath.Join(
 			workdir,

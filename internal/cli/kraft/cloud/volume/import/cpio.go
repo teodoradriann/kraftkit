@@ -238,7 +238,7 @@ func waitForOKs(conn *tls.Conn, auth string, result chan *stopResponse, waitErr 
 }
 
 // buildCPIO generates a CPIO archive from the data at the given source.
-func buildCPIO(ctx context.Context, source string) (path string, size int64, err error) {
+func buildCPIO(ctx context.Context, workdir, source string) (path string, size int64, err error) {
 	if source == "." {
 		source, err = os.Getwd()
 		if err != nil {
@@ -246,7 +246,9 @@ func buildCPIO(ctx context.Context, source string) (path string, size int64, err
 		}
 	}
 
-	cpio, err := initrd.New(ctx, source)
+	cpio, err := initrd.New(ctx, source,
+		initrd.WithWorkdir(workdir),
+	)
 	if err != nil {
 		return "", -1, fmt.Errorf("initializing temp CPIO archive: %w", err)
 	}
