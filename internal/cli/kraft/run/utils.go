@@ -198,8 +198,8 @@ func (opts *RunOptions) parseVolumes(ctx context.Context, machine *machineapi.Ma
 		var volName, mountPath string
 		split := strings.Split(volLine, ":")
 		if len(split) == 2 {
-			volName = split[0]
-			mountPath = split[1]
+			volName = filepath.Clean(split[0])
+			mountPath = filepath.Clean(split[1])
 		} else {
 			return fmt.Errorf("invalid syntax for --volume=%s expected --volume=<host>:<machine>", volLine)
 		}
