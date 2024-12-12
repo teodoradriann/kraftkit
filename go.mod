@@ -54,7 +54,7 @@ require (
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.15.2
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/onsi/gomega v1.36.0
+	github.com/onsi/gomega v1.36.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/opencontainers/runc v1.2.3
