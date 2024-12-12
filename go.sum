@@ -113,8 +113,8 @@ github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 h1:aM1
 github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092/go.mod h1:rYqSE9HbjzpHTI74vwPvae4ZVYZd1lue2ta6xHPdblA=
 github.com/anchore/go-testutils v0.0.0-20200925183923-d5f45b0d3c04 h1:VzprUTpc0vW0nnNKJfJieyH/TZ9UYAnTZs5/gHTdAe8=
 github.com/anchore/go-testutils v0.0.0-20200925183923-d5f45b0d3c04/go.mod h1:6dK64g27Qi1qGQZ67gFmBFvEHScy0/C8qhQhNe5B5pQ=
-github.com/anchore/stereoscope v0.0.9 h1:rLhYWe/CXhDq/UCUWQ3U5xtpGk4RFnssKaM0bHhs5us=
-github.com/anchore/stereoscope v0.0.9/go.mod h1:c2oGDU0R+llJObsatBSenjYPV1raKhMq9GEqe8J56EI=
+github.com/anchore/stereoscope v0.0.10 h1:FjvYNLeRlCHpbrnCOR8fwIa1W2YHTwoW4Peu5iCqKWE=
+github.com/anchore/stereoscope v0.0.10/go.mod h1:BikvtLTXRzjZnbCdk1tQJBTVZZdilR1JCCpFRYYeaNU=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be h1:9AeTilPcZAjCFIImctFaOjnTIavg87rW78vTPkQqLI8=
 github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be/go.mod h1:ySMOLuWl6zY27l47sB3qLNK6tF2fkHG55UZxx8oIVo4=
@@ -1156,8 +1156,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
-github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
+github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/sylabs/sif/v2 v2.20.0 h1:RfDHEltUrchZbp/XGcWaw3nRSbufoNWqvwmf91/Q2gI=
 github.com/sylabs/sif/v2 v2.20.0/go.mod h1:z6dq3B7QXK0pD71n15kAapven+gE+PZAIPOewBTNDpU=
 github.com/sylabs/squashfs v1.0.0 h1:xAyMS21ogglkuR5HaY55PCfqY3H32ma9GkasTYo28Zg=
