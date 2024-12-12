@@ -26,7 +26,7 @@ require (
 	github.com/containerd/nerdctl v1.7.7
 	github.com/containerd/platforms v0.2.1
 	github.com/containers/image/v5 v5.32.2
-	github.com/cyphar/filepath-securejoin v0.3.4
+	github.com/cyphar/filepath-securejoin v0.3.5
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/docker/cli v27.4.0-rc.4+incompatible
 	github.com/docker/docker v27.4.0-rc.2+incompatible
@@ -57,7 +57,7 @@ require (
 	github.com/onsi/gomega v1.36.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
-	github.com/opencontainers/runc v1.2.2
+	github.com/opencontainers/runc v1.2.3
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/opencontainers/selinux v1.11.1
 	github.com/pkg/errors v0.9.1
