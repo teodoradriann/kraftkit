@@ -154,7 +154,7 @@ func (store *embedded[_, _]) Create(ctx context.Context, key string, _, out runt
 }
 
 // Delete implements storage.Interface
-func (store *embedded[_, _]) Delete(ctx context.Context, key string, out runtime.Object, preconditions *storage.Preconditions, validateDeletion storage.ValidateObjectFunc, cachedExistingObject runtime.Object) error {
+func (store *embedded[_, _]) Delete(ctx context.Context, key string, out runtime.Object, preconditions *storage.Preconditions, validateDeletion storage.ValidateObjectFunc, cachedExistingObject runtime.Object, opts storage.DeleteOptions) error {
 	if err := store.open(); err != nil {
 		return err
 	}
@@ -263,4 +263,9 @@ func (store *embedded[_, _]) GuaranteedUpdate(ctx context.Context, key string, d
 // Count implements storage.Interface
 func (store *embedded[_, _]) Count(key string) (int64, error) {
 	panic("not implemented: kraftkit.sh/machine/store.embedded.Count")
+}
+
+// ReadinessCheck implements storage.Interface
+func (store *embedded[_, _]) ReadinessCheck() error {
+	panic("not implemented: kraftkit.sh/machine/store.embedded.ReadinessCheck")
 }
