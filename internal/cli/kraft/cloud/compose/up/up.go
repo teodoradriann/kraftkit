@@ -272,7 +272,14 @@ func Up(ctx context.Context, opts *UpOptions, args ...string) error {
 				continue
 			}
 
-			volumes = append(volumes, fmt.Sprintf("%s:%s", vol.UUID, volume.Target))
+			var volAttach string
+			if volume.ReadOnly {
+				volAttach = fmt.Sprintf("%s:%s:ro", vol.UUID, volume.Target)
+			} else {
+				volAttach = fmt.Sprintf("%s:%s", vol.UUID, volume.Target)
+			}
+
+			volumes = append(volumes, volAttach)
 		}
 
 		name := strings.ReplaceAll(fmt.Sprintf("%s-%s", opts.Project.Name, service.Name), "_", "-")
