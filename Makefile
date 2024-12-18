@@ -238,7 +238,12 @@ properclean: ## Completely clean the repository's build artifacts.
 .PHONY: docs
 docs: OUTDIR ?= $(WORKDIR)/docs/
 docs: ## Generate Markdown documentation.
-	$(GO) run $(WORKDIR)/tools/gendocs $(OUTDIR)
+	$(GO) run -tags "containers_image_storage_stub,containers_image_openpgp" $(WORKDIR)/tools/gendocs $(OUTDIR)
+
+.PHONY: man
+man: OUTDIR ?= $(WORKDIR)/docs/man/
+man: ## Generate manpage documentation.
+	$(GO) run -tags "containers_image_storage_stub,containers_image_openpgp" $(WORKDIR)/tools/genman generate $(OUTDIR)
 
 .PHONY: help
 help: ## Show this help menu and exit.
