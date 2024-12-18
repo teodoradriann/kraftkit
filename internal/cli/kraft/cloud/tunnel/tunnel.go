@@ -29,7 +29,7 @@ import (
 type TunnelOptions struct {
 	TunnelProxyPorts   []string `local:"true" long:"tunnel-proxy-port" short:"p" usage:"Remote port exposed by the tunnelling service(s). (default start port is 4444)"`
 	ProxyControlPort   uint     `local:"true" long:"tunnel-control-port" short:"P" usage:"Command-and-control port used by the tunneling service(s)." default:"4443"`
-	TunnelServiceImage string   `local:"true" long:"tunnel-image" usage:"Tunnel service image" default:"official/utils/tunnel:latest"`
+	TunnelServiceImage string   `local:"true" long:"tunnel-image" usage:"Tunnel service image" default:"official/utils/tunnel:1.0"`
 	Token              string   `noattribute:"true"`
 	Metro              string   `noattribute:"true"`
 
@@ -48,6 +48,8 @@ type TunnelOptions struct {
 	// portIterator for when a single proxy port is provided
 	portIterator uint16
 }
+
+const tunnelImageOld string = "official/utils/tunnel:latest"
 
 func NewCmd() *cobra.Command {
 	cmd, err := cmdfactory.New(&TunnelOptions{}, cobra.Command{
@@ -130,6 +132,10 @@ func NewCmd() *cobra.Command {
 }
 
 func (opts *TunnelOptions) Pre(cmd *cobra.Command, _ []string) error {
+	if opts.TunnelServiceImage == tunnelImageOld {
+		return fmt.Errorf("the image %q is deprecated, please use the default and update KraftKit to the latest version", tunnelImageOld)
+	}
+
 	if err := utils.PopulateMetroToken(cmd, &opts.Metro, &opts.Token); err != nil {
 		return fmt.Errorf("could not populate metro and token: %w", err)
 	}

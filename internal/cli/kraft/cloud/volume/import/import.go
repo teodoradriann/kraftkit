@@ -35,7 +35,7 @@ type ImportOptions struct {
 	Token string             `noattribute:"true"`
 	Metro string             `noattribute:"true"`
 
-	VolimportImage string `local:"true" long:"image" usage:"Volume import image to use" default:"official/utils/volimport:latest"`
+	VolimportImage string `local:"true" long:"image" usage:"Volume import image to use" default:"official/utils/volimport:1.0"`
 	Force          bool   `local:"true" long:"force" short:"f" usage:"Force import, even if it might fail"`
 	Source         string `local:"true" long:"source" short:"s" usage:"Path to the data source (directory, Dockerfile, Docker link, cpio file)" default:"."`
 	Timeout        uint64 `local:"true" long:"timeout" short:"t" usage:"Timeout for the import process in seconds when unresponsive" default:"10"`
@@ -43,7 +43,10 @@ type ImportOptions struct {
 	Workdir        string `local:"true" long:"workdir" short:"w" usage:"Working directory for the import process"`
 }
 
-const volimportPort uint16 = 42069
+const (
+	volimportImageOld string = "official/utils/volimport:latest"
+	volimportPort     uint16 = 42069
+)
 
 func NewCmd() *cobra.Command {
 	cmd, err := cmdfactory.New(&ImportOptions{}, cobra.Command{
@@ -77,6 +80,10 @@ func NewCmd() *cobra.Command {
 func (opts *ImportOptions) Pre(cmd *cobra.Command, _ []string) error {
 	if opts.VolID == "" {
 		return fmt.Errorf("must specify a value for the --volume flag")
+	}
+
+	if opts.VolimportImage == volimportImageOld {
+		return fmt.Errorf("the image %q is deprecated, please use the default and update KraftKit to the latest version", volimportImageOld)
 	}
 
 	if finfo, err := os.Stat(opts.Source); err == nil && (!finfo.IsDir() && !strings.HasSuffix(opts.Source, "Dockerfile")) {
