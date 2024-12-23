@@ -9,26 +9,23 @@ import (
 	"context"
 	"os"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	machineapi "kraftkit.sh/api/machine/v1alpha1"
-
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	machineapi "kraftkit.sh/api/machine/v1alpha1"
 
 	"kraftkit.sh/cmdfactory"
 	"kraftkit.sh/compose"
 	kernellogs "kraftkit.sh/internal/cli/kraft/logs"
 	"kraftkit.sh/log"
-
 	mplatform "kraftkit.sh/machine/platform"
-
 	"kraftkit.sh/packmanager"
 )
 
 type LogsOptions struct {
-	Follow bool `long:"follow" usage:"Follow log output"`
-
 	Composefile string `noattribute:"true"`
+	EnvFile     string `noattribute:"true"`
+	Follow      bool   `long:"follow" usage:"Follow log output"`
 }
 
 func NewCmd() *cobra.Command {
@@ -69,7 +66,11 @@ func (opts *LogsOptions) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.Composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}

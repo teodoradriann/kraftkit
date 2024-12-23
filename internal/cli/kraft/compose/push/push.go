@@ -10,10 +10,11 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
+
 	"kraftkit.sh/cmdfactory"
 	"kraftkit.sh/compose"
-
 	pkgpush "kraftkit.sh/internal/cli/kraft/pkg/push"
 	"kraftkit.sh/log"
 	"kraftkit.sh/packmanager"
@@ -21,6 +22,7 @@ import (
 
 type PushOptions struct {
 	composefile string
+	EnvFile     string `noattribute:"true"`
 }
 
 func NewCmd() *cobra.Command {
@@ -66,7 +68,11 @@ func (opts *PushOptions) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}

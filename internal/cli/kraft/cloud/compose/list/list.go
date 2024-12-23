@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 
 	"kraftkit.sh/cmdfactory"
@@ -23,6 +24,7 @@ import (
 
 type ListOptions struct {
 	Composefile string `noattribute:"true"`
+	EnvFile     string `noattribute:"true"`
 	Output      string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
 	Token       string `noattribute:"true"`
 }
@@ -64,7 +66,11 @@ func (opts *ListOptions) Run(ctx context.Context, args []string) error {
 		workdir = args[0]
 	}
 
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.Composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}

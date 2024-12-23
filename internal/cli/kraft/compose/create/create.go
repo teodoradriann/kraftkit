@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spf13/cobra"
 
@@ -42,6 +43,7 @@ import (
 
 type CreateOptions struct {
 	Composefile   string `noattribute:"true"`
+	EnvFile       string `noattribute:"true"`
 	RemoveOrphans bool   `long:"remove-orphans" usage:"Remove machines for services not defined in the Compose file"`
 }
 
@@ -88,7 +90,11 @@ func (opts *CreateOptions) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.Composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}

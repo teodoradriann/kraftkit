@@ -10,18 +10,20 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	composeapi "kraftkit.sh/api/compose/v1"
 	"kraftkit.sh/cmdfactory"
 	"kraftkit.sh/compose"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	composeapi "kraftkit.sh/api/compose/v1"
 	pslist "kraftkit.sh/internal/cli/kraft/ps"
 	"kraftkit.sh/log"
 	"kraftkit.sh/packmanager"
 )
 
 type PsOptions struct {
+	EnvFile string `noattribute:"true"`
 	Long    bool   `long:"long" short:"l" usage:"Show more information"`
 	Orphans bool   `long:"orphans" usage:"Include orphaned services (default: true)" default:"true"`
 	Output  string `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list" default:"table"`
@@ -74,7 +76,11 @@ func (opts *PsOptions) Run(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}

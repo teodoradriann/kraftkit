@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 
 	kraftcloud "sdk.kraft.cloud"
@@ -33,8 +34,9 @@ import (
 
 type BuildOptions struct {
 	Auth        *config.AuthConfig    `noattribute:"true"`
-	Composefile string                `noattribute:"true"`
 	Client      kraftcloud.KraftCloud `noattribute:"true"`
+	Composefile string                `noattribute:"true"`
+	EnvFile     string                `noattribute:"true"`
 	Metro       string                `noattribute:"true"`
 	Project     *compose.Project      `noattribute:"true"`
 	Push        bool                  `long:"push" usage:"Push the built service images"`
@@ -102,7 +104,11 @@ func Build(ctx context.Context, opts *BuildOptions, args ...string) error {
 			return err
 		}
 
-		opts.Project, err = compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+		opts.Project, err = compose.NewProjectFromComposeFile(ctx,
+			workdir,
+			opts.Composefile,
+			composespec.WithEnvFiles(opts.EnvFile),
+		)
 		if err != nil {
 			return err
 		}
