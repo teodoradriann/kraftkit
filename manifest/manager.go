@@ -12,9 +12,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
 
+	"github.com/Masterminds/semver"
 	"github.com/gobwas/glob"
 	"github.com/sirupsen/logrus"
 
@@ -119,6 +121,43 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 		}
 
 		index.Manifests = append(index.Manifests, manifests...)
+	}
+
+	// Sort manifests by name
+	sort.Slice(index.Manifests, func(i, j int) bool {
+		return index.Manifests[i].Name < index.Manifests[j].Name
+	})
+
+	for i := range index.Manifests {
+		// Sort manifest versions by version
+		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
+			jstr := index.Manifests[i].Versions[j].Version
+			if !strings.HasPrefix(jstr, "v") {
+				jstr = "v" + jstr
+			}
+
+			jSemVer, err := semver.NewVersion(jstr)
+			if err != nil {
+				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
+			}
+
+			kstr := index.Manifests[i].Versions[j].Version
+			if !strings.HasPrefix(kstr, "v") {
+				kstr = "v" + kstr
+			}
+
+			kSemVer, err := semver.NewVersion(kstr)
+			if err != nil {
+				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
+			}
+
+			return jSemVer.LessThan(kSemVer)
+		})
+
+		// Sort manifest channels by name
+		sort.Slice(index.Manifests[i].Channels, func(j, k int) bool {
+			return index.Manifests[i].Channels[j].Name < index.Manifests[i].Channels[k].Name
+		})
 	}
 
 	return index, nil
