@@ -41,6 +41,45 @@ func UntarGz(src, dst string, opts ...UnarchiveOption) error {
 	return Untar(gzipReader, dst, opts...)
 }
 
+// IsTarGz checks if a file is a valid tarball which has been gzip compressed.
+func IsTarGz(filepath string) (bool, error) {
+	// Open the file
+	file, err := os.Open(filepath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	// Read the first few bytes to check gzip magic numbers
+	buf := make([]byte, 2)
+	if _, err := file.Read(buf); err != nil {
+		return false, err
+	}
+	if !bytes.Equal(buf, []byte{0x1f, 0x8b}) { // Gzip magic numbers
+		return false, nil
+	}
+
+	// Reset file pointer and create a gzip reader
+	if _, err := file.Seek(0, 0); err != nil {
+		return false, err
+	}
+
+	gzr, err := gzip.NewReader(file)
+	if err != nil {
+		return false, nil // Not a valid gzip
+	}
+	defer gzr.Close()
+
+	// Check if the gzip contains a tar archive
+	buf = make([]byte, 512)
+	if _, err := gzr.Read(buf); err != nil {
+		return false, nil // Unable to read gzip contents
+	}
+
+	// TAR files typically start with a valid TAR header (file name, etc.)
+	return bytes.HasPrefix(buf[257:], []byte("ustar")), nil
+}
+
 // Untar unarchives a tarball which has been gzip compressed
 func Untar(src io.Reader, dst string, opts ...UnarchiveOption) error {
 	uc := &UnarchiveOptions{}
