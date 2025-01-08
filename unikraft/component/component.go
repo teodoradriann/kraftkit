@@ -115,7 +115,7 @@ func urlHasVersion(u *url.URL) string {
 func parseStringProp(entry string) map[string]interface{} {
 	component := make(map[string]interface{})
 
-	if f, err := os.Stat(entry); err == nil && f.IsDir() {
+	if f, err := os.Stat(entry); err == nil && (f.Mode().IsRegular() || f.Mode().IsDir()) {
 		component["source"] = entry
 	} else if u, err := url.Parse(entry); err == nil && u.Host != "" {
 		component["source"] = entry
