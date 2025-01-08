@@ -6,6 +6,7 @@ package archive
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -90,6 +91,49 @@ func Untar(src io.Reader, dst string, opts ...UnarchiveOption) error {
 	}
 
 	tr := tar.NewReader(src)
+
+	if uc.stripIfOnlyDir {
+		// Duplicate src so that we can reset it.
+		var buf bytes.Buffer
+		if _, err := io.Copy(&buf, src); err != nil {
+			return fmt.Errorf("could not copy reader: %v", err)
+		}
+
+		// Reset the buffer on exit
+		defer buf.Reset()
+
+		// Set the tarball readers by using the previously copied buffer.
+		tr = tar.NewReader(bytes.NewReader(buf.Bytes()))
+		tr2 := tar.NewReader(bytes.NewReader(buf.Bytes()))
+
+		// Map to track top-level directory entries
+		topLevelDirs := make(map[string]struct{})
+
+		for {
+			header, err := tr2.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("failed to read tar header: %w", err)
+			}
+
+			// Split path components to identify the top-level directory
+			components := strings.SplitN(header.Name, "/", 2)
+			if len(components) > 0 && components[0] != "pax_global_header" {
+				topLevelDirs[components[0]] = struct{}{}
+			}
+
+			// If more than one top-level directory is detected, exit
+			if len(topLevelDirs) > 1 {
+				break
+			}
+		}
+
+		if len(topLevelDirs) == 1 {
+			uc.stripComponents = 1
+		}
+	}
 
 	for {
 		header, err := tr.Next()
