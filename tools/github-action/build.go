@@ -59,6 +59,10 @@ func (opts *GithubAction) build(ctx context.Context) error {
 		}
 	}
 
+	if opts.project.Unikraft(ctx) == nil {
+		return nil
+	}
+
 	if err := opts.project.Configure(
 		ctx,
 		opts.target, // Target-specific options
