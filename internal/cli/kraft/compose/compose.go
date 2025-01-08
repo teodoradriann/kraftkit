@@ -30,6 +30,7 @@ import (
 
 type ComposeOptions struct {
 	Composefile string `long:"file" short:"f" usage:"Set the Compose file."`
+	EnvFile     string `long:"env-file" usage:"Set the environment file."`
 }
 
 func NewCmd() *cobra.Command {

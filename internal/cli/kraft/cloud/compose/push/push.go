@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
@@ -31,6 +32,7 @@ type PushOptions struct {
 	Auth        *config.AuthConfig           `noattribute:"true"`
 	Client      kcinstances.InstancesService `noattribute:"true"`
 	Composefile string                       `noattribute:"true"`
+	EnvFile     string                       `noattribute:"true"`
 	Metro       string                       `noattribute:"true"`
 	Project     *compose.Project             `noattribute:"true"`
 	Token       string                       `noattribute:"true"`
@@ -79,7 +81,11 @@ func Push(ctx context.Context, opts *PushOptions, args ...string) error {
 	}
 
 	if opts.Project == nil {
-		opts.Project, err = compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+		opts.Project, err = compose.NewProjectFromComposeFile(ctx,
+			workdir,
+			opts.Composefile,
+			composespec.WithEnvFiles(opts.EnvFile),
+		)
 		if err != nil {
 			return err
 		}

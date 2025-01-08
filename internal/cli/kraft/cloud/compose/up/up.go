@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
@@ -41,6 +42,7 @@ type UpOptions struct {
 	Client           kraftcloud.KraftCloud    `noattribute:"true"`
 	Composefile      string                   `noattribute:"true"`
 	Detach           bool                     `local:"true" long:"detach" short:"d" usage:"Run the services in the background"`
+	EnvFile          string                   `noattribute:"true"`
 	Metro            string                   `noattribute:"true"`
 	NoStart          bool                     `noattribute:"true"`
 	NoBuild          bool                     `local:"true" long:"no-build" usage:"Do not build the services before starting them"`
@@ -136,7 +138,11 @@ func Up(ctx context.Context, opts *UpOptions, args ...string) error {
 			return err
 		}
 
-		opts.Project, err = compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+		opts.Project, err = compose.NewProjectFromComposeFile(ctx,
+			workdir,
+			opts.Composefile,
+			composespec.WithEnvFiles(opts.EnvFile),
+		)
 		if err != nil {
 			return err
 		}

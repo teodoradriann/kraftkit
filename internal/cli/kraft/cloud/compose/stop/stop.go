@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 
 	kraftcloud "sdk.kraft.cloud"
@@ -30,6 +31,7 @@ type StopOptions struct {
 	Client       kraftcloud.KraftCloud `noattribute:"true"`
 	Composefile  string                `noattribute:"true"`
 	DrainTimeout time.Duration         `long:"drain-timeout" short:"d" usage:"Timeout for the instance to stop (ms/s/m/h)"`
+	EnvFile      string                `noattribute:"true"`
 	Force        bool                  `long:"force" short:"f" usage:"Force stop the instance(s)"`
 	Metro        string                `noattribute:"true"`
 	Project      *compose.Project      `noattribute:"true"`
@@ -103,7 +105,11 @@ func (opts *StopOptions) Run(ctx context.Context, args []string) error {
 			return err
 		}
 
-		opts.Project, err = compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+		opts.Project, err = compose.NewProjectFromComposeFile(ctx,
+			workdir,
+			opts.Composefile,
+			composespec.WithEnvFiles(opts.EnvFile),
+		)
 		if err != nil {
 			return err
 		}

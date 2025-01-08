@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/spf13/cobra"
 
@@ -24,6 +25,7 @@ import (
 
 type BuildOptions struct {
 	composefile string
+	EnvFile     string `noattribute:"true"`
 }
 
 func NewCmd() *cobra.Command {
@@ -63,7 +65,11 @@ func (opts *BuildOptions) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}

@@ -40,7 +40,7 @@ var DefaultFileNames = []string{
 
 // NewProjectFromComposeFile loads a compose file and returns a project. If no
 // compose file is specified, it will look for one in the current directory.
-func NewProjectFromComposeFile(ctx context.Context, workdir, composefile string) (*Project, error) {
+func NewProjectFromComposeFile(ctx context.Context, workdir, composefile string, opts ...cli.ProjectOptionsFn) (*Project, error) {
 	if composefile == "" {
 		for _, file := range DefaultFileNames {
 			fullpath := filepath.Join(workdir, file)
@@ -62,6 +62,7 @@ func NewProjectFromComposeFile(ctx context.Context, workdir, composefile string)
 
 	options, err := cli.NewProjectOptions(
 		[]string{fullpath},
+		opts...,
 	)
 	if err != nil {
 		return nil, err

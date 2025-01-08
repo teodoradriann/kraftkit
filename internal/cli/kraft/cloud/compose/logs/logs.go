@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 
 	kraftcloud "sdk.kraft.cloud"
@@ -27,6 +28,7 @@ type LogsOptions struct {
 	Auth        *config.AuthConfig    `noattribute:"true"`
 	Client      kraftcloud.KraftCloud `noattribute:"true"`
 	Composefile string                `noattribute:"true"`
+	EnvFile     string                `noattribute:"true"`
 	Follow      bool                  `long:"follow" short:"f" usage:"Follow log output"`
 	Metro       string                `noattribute:"true"`
 	Output      string                `long:"output" short:"o" usage:"Set output format. Options: table,yaml,json,list,raw" default:"table"`
@@ -99,7 +101,11 @@ func Logs(ctx context.Context, opts *LogsOptions, args ...string) error {
 	}
 
 	if opts.Project == nil {
-		opts.Project, err = compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+		opts.Project, err = compose.NewProjectFromComposeFile(ctx,
+			workdir,
+			opts.Composefile,
+			composespec.WithEnvFiles(opts.EnvFile),
+		)
 		if err != nil {
 			return err
 		}

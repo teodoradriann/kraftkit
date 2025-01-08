@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 
 	kraftcloud "sdk.kraft.cloud"
@@ -28,6 +29,7 @@ type DownOptions struct {
 	Auth        *config.AuthConfig    `noattribute:"true"`
 	Client      kraftcloud.KraftCloud `noattribute:"true"`
 	Composefile string                `noattribute:"true"`
+	EnvFile     string                `noattribute:"true"`
 	Metro       string                `noattribute:"true"`
 	Project     *compose.Project      `noattribute:"true"`
 	Token       string                `noattribute:"true"`
@@ -88,7 +90,11 @@ func (opts *DownOptions) Run(ctx context.Context, args []string) error {
 			return err
 		}
 
-		opts.Project, err = compose.NewProjectFromComposeFile(ctx, workdir, opts.Composefile)
+		opts.Project, err = compose.NewProjectFromComposeFile(ctx,
+			workdir,
+			opts.Composefile,
+			composespec.WithEnvFiles(opts.EnvFile),
+		)
 		if err != nil {
 			return err
 		}

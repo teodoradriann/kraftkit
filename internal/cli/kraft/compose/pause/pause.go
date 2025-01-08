@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
+	composespec "github.com/compose-spec/compose-go/v2/cli"
 	"github.com/spf13/cobra"
 
 	"kraftkit.sh/cmdfactory"
@@ -23,6 +24,7 @@ import (
 
 type PauseOptions struct {
 	composefile string
+	EnvFile     string `noattribute:"true"`
 }
 
 func NewCmd() *cobra.Command {
@@ -67,7 +69,11 @@ func (opts *PauseOptions) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	project, err := compose.NewProjectFromComposeFile(ctx, workdir, opts.composefile)
+	project, err := compose.NewProjectFromComposeFile(ctx,
+		workdir,
+		opts.composefile,
+		composespec.WithEnvFiles(opts.EnvFile),
+	)
 	if err != nil {
 		return err
 	}
