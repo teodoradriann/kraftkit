@@ -11,3 +11,12 @@ import (
 // ManifestManagerOption represents a specific configuration that can be used
 // for the Manifest Package Manager.
 type ManifestManagerOption func(context.Context, *manifestManager) error
+
+// Set the default set of source manifests to initialize the manager with.
+// Not setting anything will result in defaults.
+func WithManifests(manifests ...string) ManifestManagerOption {
+	return func(ctx context.Context, m *manifestManager) error {
+		m.manifests = manifests
+		return nil
+	}
+}
