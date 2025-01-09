@@ -80,10 +80,8 @@ func (opts *QuotasOptions) Run(ctx context.Context, _ []string) error {
 		return fmt.Errorf("could not get quotas: %w", err)
 	}
 
-	imageResp, err := client.Images().WithMetro(opts.metro).Quotas(ctx)
-	if err != nil {
-		return fmt.Errorf("could not get image quotas: %w", err)
-	}
+	// Do not check error here, the print will just hide the field if empty
+	imageResp, _ := client.Images().WithMetro(opts.metro).Quotas(ctx)
 
 	if err = iostreams.G(ctx).StartPager(); err != nil {
 		log.G(ctx).Errorf("error starting pager: %v", err)
