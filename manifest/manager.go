@@ -26,7 +26,7 @@ import (
 	"kraftkit.sh/unikraft/component"
 )
 
-type manifestManager struct {
+type ManifestManager struct {
 	manifests          []string
 	indexCache         *ManifestIndex
 	localManifestDir   string
@@ -35,17 +35,25 @@ type manifestManager struct {
 	cacheDir           string
 }
 
-// NewManifestManager returns a `packmanager.PackageManager` which manipulates
-// Unikraft manifests.
-func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageManager, error) {
-	manager := manifestManager{}
-
-	for _, mopt := range opts {
-		opt, ok := mopt.(ManifestManagerOption)
-		if !ok {
-			return nil, fmt.Errorf("cannot cast ManifestManager option")
+// NewPackageManager satisfies the `packmanager.NewPackageManager` interface
+// and returns a new `packmanager.PackageManager` for the manifest manager.
+func NewPackageManager(ctx context.Context, opts ...any) (packmanager.PackageManager, error) {
+	mopts := make([]ManifestManagerOption, 0)
+	for _, opt := range opts {
+		if o, ok := opt.(ManifestManagerOption); ok {
+			mopts = append(mopts, o)
 		}
+	}
 
+	return NewManifestManager(ctx, mopts...)
+}
+
+// NewManifestManager instantiates a new package manager which manipulates
+// Unikraft manifests.
+func NewManifestManager(ctx context.Context, opts ...ManifestManagerOption) (*ManifestManager, error) {
+	manager := ManifestManager{}
+
+	for _, opt := range opts {
 		if err := opt(ctx, &manager); err != nil {
 			return nil, err
 		}
@@ -88,7 +96,7 @@ func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageMa
 }
 
 // update retrieves and returns a cache of the upstream manifest registry
-func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
+func (m *ManifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	if len(m.manifests) == 0 {
 		// In this scenario, re-attempt all manifests provided within the config
 		// space which were not remotely probed during initialization.
@@ -187,7 +195,7 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	return index, nil
 }
 
-func (m *manifestManager) Update(ctx context.Context) error {
+func (m *ManifestManager) Update(ctx context.Context) error {
 	index, err := m.update(ctx)
 	if err != nil {
 		return err
@@ -196,7 +204,7 @@ func (m *manifestManager) Update(ctx context.Context) error {
 	return m.saveIndex(ctx, index)
 }
 
-func (m *manifestManager) saveIndex(ctx context.Context, index *ManifestIndex) error {
+func (m *ManifestManager) saveIndex(ctx context.Context, index *ManifestIndex) error {
 	if index == nil {
 		return nil
 	}
@@ -241,12 +249,12 @@ func (m *manifestManager) saveIndex(ctx context.Context, index *ManifestIndex) e
 	return index.WriteToFile(m.LocalManifestIndex(ctx))
 }
 
-func (m *manifestManager) SetSources(_ context.Context, sources ...string) error {
+func (m *ManifestManager) SetSources(_ context.Context, sources ...string) error {
 	m.manifests = sources
 	return nil
 }
 
-func (m *manifestManager) AddSource(ctx context.Context, source string) error {
+func (m *ManifestManager) AddSource(ctx context.Context, source string) error {
 	if m.manifests == nil {
 		m.manifests = make([]string, 0)
 	}
@@ -257,7 +265,7 @@ func (m *manifestManager) AddSource(ctx context.Context, source string) error {
 }
 
 // Delete implements packmanager.PackageManager.
-func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.QueryOption) error {
+func (m *ManifestManager) Delete(ctx context.Context, qopts ...packmanager.QueryOption) error {
 	packs, err := m.Catalog(ctx, qopts...)
 	if err != nil {
 		return err
@@ -297,7 +305,7 @@ func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.Query
 	return errors.Join(errs...)
 }
 
-func (m *manifestManager) RemoveSource(ctx context.Context, source string) error {
+func (m *ManifestManager) RemoveSource(ctx context.Context, source string) error {
 	for i, needle := range m.manifests {
 		if needle == source {
 			ret := make([]string, 0)
@@ -310,19 +318,19 @@ func (m *manifestManager) RemoveSource(ctx context.Context, source string) error
 	return nil
 }
 
-func (m *manifestManager) Pack(ctx context.Context, c component.Component, opts ...packmanager.PackOption) ([]pack.Package, error) {
+func (m *ManifestManager) Pack(ctx context.Context, c component.Component, opts ...packmanager.PackOption) ([]pack.Package, error) {
 	return nil, fmt.Errorf("not implemented manifest.manager.Pack")
 }
 
-func (m *manifestManager) Unpack(ctx context.Context, p pack.Package, opts ...packmanager.UnpackOption) ([]component.Component, error) {
+func (m *ManifestManager) Unpack(ctx context.Context, p pack.Package, opts ...packmanager.UnpackOption) ([]component.Component, error) {
 	return nil, fmt.Errorf("not implemented manifest.manager.Unpack")
 }
 
-func (m *manifestManager) From(sub pack.PackageFormat) (packmanager.PackageManager, error) {
+func (m *ManifestManager) From(sub pack.PackageFormat) (packmanager.PackageManager, error) {
 	return nil, fmt.Errorf("method not applicable to manifest manager")
 }
 
-func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.QueryOption) ([]pack.Package, error) {
+func (m *ManifestManager) Catalog(ctx context.Context, qopts ...packmanager.QueryOption) ([]pack.Package, error) {
 	var err error
 	var manifests []*Manifest
 
@@ -510,7 +518,7 @@ func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 	return packages, nil
 }
 
-func (m *manifestManager) IsCompatible(ctx context.Context, source string, qopts ...packmanager.QueryOption) (packmanager.PackageManager, bool, error) {
+func (m *ManifestManager) IsCompatible(ctx context.Context, source string, qopts ...packmanager.QueryOption) (packmanager.PackageManager, bool, error) {
 	log.G(ctx).WithFields(logrus.Fields{
 		"source": source,
 	}).Trace("checking if source is compatible with the manifest manager")
@@ -533,7 +541,7 @@ func (m *manifestManager) IsCompatible(ctx context.Context, source string, qopts
 }
 
 // LocalManifestDir returns the user configured path to all the manifests
-func (m *manifestManager) LocalManifestsDir(ctx context.Context) string {
+func (m *ManifestManager) LocalManifestsDir(ctx context.Context) string {
 	if len(m.localManifestDir) > 0 {
 		return m.localManifestDir
 	}
@@ -546,10 +554,10 @@ func (m *manifestManager) LocalManifestsDir(ctx context.Context) string {
 }
 
 // LocalManifestIndex returns the user configured path to the manifest index
-func (m *manifestManager) LocalManifestIndex(ctx context.Context) string {
+func (m *ManifestManager) LocalManifestIndex(ctx context.Context) string {
 	return filepath.Join(m.LocalManifestsDir(ctx), "index.yaml")
 }
 
-func (m *manifestManager) Format() pack.PackageFormat {
+func (m *ManifestManager) Format() pack.PackageFormat {
 	return ManifestFormat
 }

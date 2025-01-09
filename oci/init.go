@@ -12,7 +12,7 @@ func RegisterPackageManager() func(u *packmanager.UmbrellaManager) error {
 	return func(u *packmanager.UmbrellaManager) error {
 		return u.RegisterPackageManager(
 			OCIFormat,
-			NewOCIManager,
+			NewPackageManager,
 			WithDefaultAuth(),
 			WithDefaultRegistries(),
 			WithDetectHandler(),
