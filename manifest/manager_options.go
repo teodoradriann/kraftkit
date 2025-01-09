@@ -46,3 +46,11 @@ func WithManagerDefaultChannelName(name string) ManifestManagerOption {
 		return nil
 	}
 }
+
+// Set the location of component archives which are stored locally.
+func WithManagerCacheDir(dir string) ManifestManagerOption {
+	return func(ctx context.Context, m *manifestManager) error {
+		m.cacheDir = dir
+		return nil
+	}
+}

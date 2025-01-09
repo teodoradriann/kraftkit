@@ -32,6 +32,7 @@ type manifestManager struct {
 	localManifestDir   string
 	auths              map[string]config.AuthConfig
 	defaultChannelName string
+	cacheDir           string
 }
 
 // NewManifestManager returns a `packmanager.PackageManager` which manipulates
@@ -52,6 +53,10 @@ func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageMa
 
 	if len(manager.auths) == 0 {
 		manager.auths = config.G[config.KraftKit](ctx).Auth
+	}
+
+	if len(manager.cacheDir) == 0 {
+		manager.cacheDir = config.G[config.KraftKit](ctx).Paths.Sources
 	}
 
 	if len(manager.manifests) == 0 {
@@ -109,7 +114,7 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 
 	mopts := []ManifestOption{
 		WithAuthConfig(m.auths),
-		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
+		WithCacheDir(m.cacheDir),
 		WithUpdate(true),
 		WithDefaultChannelName(m.defaultChannelName),
 	}
@@ -274,7 +279,7 @@ func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.Query
 		manifests, err := FindManifestsFromSource(ctx,
 			m.indexCache.Origin,
 			WithAuthConfig(query.Auths()),
-			WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
+			WithCacheDir(m.cacheDir),
 			WithUpdate(query.Remote()),
 			WithDefaultChannelName(m.defaultChannelName),
 		)
