@@ -49,6 +49,7 @@ type ProjectOptions struct {
 	workdir           string
 	kraftfile         *Kraftfile
 	kconfig           kconfig.KeyValueMap
+	outDir            string
 	skipValidation    bool
 	skipInterpolation bool
 	skipNormalization bool
@@ -247,6 +248,14 @@ func WithProjectInterpolation(interpolation bool) ProjectOption {
 func WithProjectNormalization(normalization bool) ProjectOption {
 	return func(popts *ProjectOptions) error {
 		popts.skipNormalization = !normalization
+		return nil
+	}
+}
+
+// WithProjectOutDir defines ProjectOptions' output directory
+func WithProjectOutDir(outDir string) ProjectOption {
+	return func(popts *ProjectOptions) error {
+		popts.outDir = outDir
 		return nil
 	}
 }

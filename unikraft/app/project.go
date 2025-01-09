@@ -77,7 +77,13 @@ func NewProjectFromOptions(ctx context.Context, opts ...ProjectOption) (Applicat
 	}
 
 	name, _ := popts.GetProjectName()
-	outdir := unikraft.BuildDir
+
+	var outdir string
+	if popts.outDir == "" {
+		outdir = popts.RelativePath(unikraft.BuildDir)
+	} else {
+		outdir = popts.outDir
+	}
 
 	iface := popts.kraftfile.config
 	if iface == nil {
@@ -110,7 +116,7 @@ func NewProjectFromOptions(ctx context.Context, opts ...ProjectOption) (Applicat
 	uk := &unikraft.Context{
 		UK_NAME:   name,
 		UK_BASE:   popts.RelativePath(workdir),
-		BUILD_DIR: popts.RelativePath(outdir),
+		BUILD_DIR: outdir,
 	}
 
 	if _, err := os.Stat(uk.BUILD_DIR); err != nil && os.IsNotExist(err) {

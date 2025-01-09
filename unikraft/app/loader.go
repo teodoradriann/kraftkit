@@ -20,6 +20,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	interp "github.com/compose-spec/compose-go/interpolation"
@@ -57,6 +58,9 @@ func NewApplicationFromInterface(ctx context.Context, iface map[string]interface
 			return nil, errors.New("output directory must be a string")
 		}
 	}
+	if popts.outDir != "" {
+		outdir = popts.outDir
+	}
 
 	if n, ok := iface["rootfs"]; ok {
 		app.rootfs, ok = n.(string)
@@ -76,8 +80,15 @@ func NewApplicationFromInterface(ctx context.Context, iface map[string]interface
 		}
 	}
 
-	if popts.resolvePaths {
+	if popts.resolvePaths && popts.outDir == "" {
 		app.outDir = popts.RelativePath(outdir)
+	} else if popts.outDir != "" {
+		abs, err := filepath.Abs(outdir)
+		if err != nil {
+			return nil, err
+		}
+
+		app.outDir = abs
 	}
 
 	if err := Transform(ctx, getSection(iface, "unikraft"), &app.unikraft); err != nil {
