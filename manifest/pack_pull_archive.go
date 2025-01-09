@@ -204,9 +204,9 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 		}).Debug("using cache")
 	}
 
-	local := cache
+	// Unarchive the package to the given workdir
 	if len(popts.Workdir()) > 0 {
-		local, err = unikraft.PlaceComponent(
+		local, err := unikraft.PlaceComponent(
 			popts.Workdir(),
 			manifest.Type,
 			manifest.Name,
@@ -214,10 +214,7 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 		if err != nil {
 			return fmt.Errorf("could not place component package: %s", err)
 		}
-	}
 
-	// Unarchive the package to the given workdir
-	if len(local) > 0 {
 		log.G(ctx).WithFields(logrus.Fields{
 			"from": cache,
 			"to":   local,
