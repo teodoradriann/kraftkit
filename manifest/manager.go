@@ -29,8 +29,9 @@ import (
 )
 
 type manifestManager struct {
-	manifests  []string
-	indexCache *ManifestIndex
+	manifests        []string
+	indexCache       *ManifestIndex
+	localManifestDir string
 }
 
 // NewManifestManager returns a `packmanager.PackageManager` which manipulates
@@ -559,6 +560,10 @@ func (m *manifestManager) IsCompatible(ctx context.Context, source string, qopts
 
 // LocalManifestDir returns the user configured path to all the manifests
 func (m *manifestManager) LocalManifestsDir(ctx context.Context) string {
+	if len(m.localManifestDir) > 0 {
+		return m.localManifestDir
+	}
+
 	if len(config.G[config.KraftKit](ctx).Paths.Manifests) > 0 {
 		return config.G[config.KraftKit](ctx).Paths.Manifests
 	}
