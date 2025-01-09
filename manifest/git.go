@@ -196,14 +196,29 @@ func (gp *GitProvider) Manifests() ([]*Manifest, error) {
 	return []*Manifest{manifest}, nil
 }
 
-func (gp *GitProvider) PullManifest(ctx context.Context, manifest *Manifest, popts ...pack.PullOption) error {
+func (gp *GitProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, popts ...pack.PullOption) error {
 	if useGit {
 		return pullGit(ctx, manifest, popts...)
 	}
 
 	manifest.mopts = gp.mopts
 
-	if err := pullArchive(ctx, manifest, popts...); err != nil {
+	if err := pullArchive(ctx, manifest, channel.Resource, channel.Sha256, popts...); err != nil {
+		log.G(ctx).Trace(err)
+		return pullGit(ctx, manifest, popts...)
+	}
+
+	return nil
+}
+
+func (gp *GitProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, popts ...pack.PullOption) error {
+	if useGit {
+		return pullGit(ctx, manifest, popts...)
+	}
+
+	manifest.mopts = gp.mopts
+
+	if err := pullArchive(ctx, manifest, version.Resource, version.Sha256, popts...); err != nil {
 		log.G(ctx).Trace(err)
 		return pullGit(ctx, manifest, popts...)
 	}

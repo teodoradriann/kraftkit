@@ -42,16 +42,23 @@ func (pp *pullProgressArchive) Write(p []byte) (n int, err error) {
 
 // pullArchive is used internally to pull a specific Manifest resource using the
 // conventional archive.
-func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) error {
+func pullArchive(ctx context.Context, manifest *Manifest, resource string, checksum string, opts ...pack.PullOption) error {
+	if manifest.mopts.cacheDir == "" {
+		return fmt.Errorf("cannot determine cache dir")
+	}
+
 	popts, err := pack.NewPullOptions(opts...)
 	if err != nil {
 		return err
 	}
 
-	resource, cache, checksum, err := resourceCacheChecksum(manifest)
-	if err != nil {
-		return err
+	cache := manifest.Name + string(filepath.Separator) + filepath.Base(resource)
+
+	if manifest.Type != unikraft.ComponentTypeCore {
+		cache = manifest.Type.Plural() + string(filepath.Separator) + cache
 	}
+
+	cache = filepath.Join(manifest.mopts.cacheDir, cache)
 
 	pp := &pullProgressArchive{
 		onProgress: popts.OnProgress,

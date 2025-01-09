@@ -78,12 +78,16 @@ func (mip *ManifestIndexProvider) Manifests() ([]*Manifest, error) {
 	return mip.index.Manifests, nil
 }
 
-func (mip *ManifestIndexProvider) PullManifest(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) error {
-	return fmt.Errorf("not implemented: manifest.ManifestIndexProvider.PullManifest")
+func (mip *ManifestIndexProvider) PullChannel(context.Context, *Manifest, *ManifestChannel, ...pack.PullOption) error {
+	return nil
+}
+
+func (mip *ManifestIndexProvider) PullVersion(context.Context, *Manifest, *ManifestVersion, ...pack.PullOption) error {
+	return nil
 }
 
 func (mip *ManifestIndexProvider) DeleteManifest(context.Context) error {
-	return fmt.Errorf("not implemented: manifest.ManifestIndexProvider.DeleteManifest")
+	return nil
 }
 
 func (mip *ManifestIndexProvider) String() string {

@@ -133,7 +133,13 @@ func (mp mpack) Pull(ctx context.Context, opts ...pack.PullOption) error {
 		return fmt.Errorf("uninitialized manifest provider")
 	}
 
-	return mp.manifest.Provider.PullManifest(ctx, mp.manifest, opts...)
+	if len(mp.manifest.Channels) == 1 {
+		return mp.manifest.Provider.PullChannel(ctx, mp.manifest, &mp.manifest.Channels[0], opts...)
+	} else if len(mp.manifest.Versions) == 1 {
+		return mp.manifest.Provider.PullVersion(ctx, mp.manifest, &mp.manifest.Versions[0], opts...)
+	}
+
+	return fmt.Errorf("cannot determine which channel or version to pull")
 }
 
 func (mp mpack) PulledAt(context.Context) (bool, time.Time, error) {
@@ -146,20 +152,46 @@ func (mp mpack) PulledAt(context.Context) (bool, time.Time, error) {
 	earliest := time.Now()
 
 	for _, manifest := range manifests {
-		_, cache, _, err := resourceCacheChecksum(manifest)
-		if err != nil {
-			return false, time.Time{}, err
+		for _, channel := range manifest.Channels {
+			cache := manifest.Name + string(filepath.Separator) + filepath.Base(channel.Resource)
+
+			if manifest.Type != unikraft.ComponentTypeCore {
+				cache = manifest.Type.Plural() + string(filepath.Separator) + cache
+			}
+
+			cache = filepath.Join(manifest.mopts.cacheDir, cache)
+
+			si, err := os.Stat(cache)
+			if err != nil {
+				continue
+			}
+
+			pulled = true
+
+			if earliest.Before(si.ModTime()) {
+				earliest = si.ModTime()
+			}
 		}
 
-		si, err := os.Stat(cache)
-		if err != nil {
-			continue
-		}
+		for _, version := range manifest.Versions {
+			cache := manifest.Name + string(filepath.Separator) + filepath.Base(version.Resource)
 
-		pulled = true
+			if manifest.Type != unikraft.ComponentTypeCore {
+				cache = manifest.Type.Plural() + string(filepath.Separator) + cache
+			}
 
-		if earliest.Before(si.ModTime()) {
-			earliest = si.ModTime()
+			cache = filepath.Join(manifest.mopts.cacheDir, cache)
+
+			si, err := os.Stat(cache)
+			if err != nil {
+				continue
+			}
+
+			pulled = true
+
+			if earliest.Before(si.ModTime()) {
+				earliest = si.ModTime()
+			}
 		}
 	}
 
@@ -178,48 +210,6 @@ func (mp mpack) Delete(ctx context.Context) error {
 // Save implements pack.Package.
 func (mp mpack) Save(ctx context.Context) error {
 	return nil
-}
-
-// resourceCacheChecksum returns the resource path, checksum and the cache
-// location for a given Manifestt which only has one channel or one version.  If
-// the Manifest has more than one, then it is not possible to determine which
-// resource should be looked up.
-func resourceCacheChecksum(manifest *Manifest) (string, string, string, error) {
-	var err error
-	var resource string
-	var checksum string
-	var cache string
-
-	if manifest.mopts.cacheDir == "" {
-		err = fmt.Errorf("cannot determine cache dir")
-	} else if len(manifest.Channels) == 1 {
-		ext := filepath.Ext(manifest.Channels[0].Resource)
-		if ext == ".gz" {
-			ext = ".tar.gz"
-		}
-
-		resource = manifest.Channels[0].Resource
-		checksum = manifest.Channels[0].Sha256
-		cache = filepath.Join(
-			manifest.mopts.cacheDir, manifest.Name+"-"+manifest.Channels[0].Name+ext,
-		)
-
-	} else if len(manifest.Versions) == 1 {
-		ext := filepath.Ext(manifest.Versions[0].Resource)
-		if ext == ".gz" {
-			ext = ".tar.gz"
-		}
-
-		resource = manifest.Versions[0].Resource
-		checksum = manifest.Versions[0].Sha256
-		cache = filepath.Join(
-			manifest.mopts.cacheDir, manifest.Name+"-"+manifest.Versions[0].Version+ext,
-		)
-	} else {
-		err = fmt.Errorf("too many options")
-	}
-
-	return resource, cache, checksum, err
 }
 
 func (mp mpack) Format() pack.PackageFormat {
