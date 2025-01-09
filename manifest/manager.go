@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"time"
@@ -95,8 +94,8 @@ func NewManifestManager(ctx context.Context, opts ...ManifestManagerOption) (*Ma
 	return &manager, nil
 }
 
-// update retrieves and returns a cache of the upstream manifest registry
-func (m *ManifestManager) update(ctx context.Context) (*ManifestIndex, error) {
+// Index retrieves and returns a cache of the upstream manifest registry
+func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
 	if len(m.manifests) == 0 {
 		// In this scenario, re-attempt all manifests provided within the config
 		// space which were not remotely probed during initialization.
@@ -196,10 +195,12 @@ func (m *ManifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 }
 
 func (m *ManifestManager) Update(ctx context.Context) error {
-	index, err := m.update(ctx)
+	index, err := m.Index(ctx)
 	if err != nil {
 		return err
 	}
+
+	m.indexCache = index
 
 	return m.saveIndex(ctx, index)
 }
@@ -209,44 +210,7 @@ func (m *ManifestManager) saveIndex(ctx context.Context, index *ManifestIndex) e
 		return nil
 	}
 
-	m.indexCache = new(ManifestIndex)
-	*m.indexCache = *index
-
-	manifests := make([]*Manifest, len(index.Manifests))
-
-	// Create parent directories if not present
-	if err := os.MkdirAll(filepath.Dir(m.LocalManifestIndex(ctx)), 0o771); err != nil {
-		return err
-	}
-
-	// TODO: Partition directories when there is a large number of manifests
-	// TODO: Merge manifests of same name and type?
-
-	// Create a file for each manifest
-	for _, manifest := range index.Manifests {
-		filename := manifest.Name + ".yaml"
-
-		if manifest.Type != unikraft.ComponentTypeCore {
-			filename = manifest.Type.Plural() + string(filepath.Separator) + filename
-		}
-
-		fileloc := filepath.Join(m.LocalManifestsDir(ctx), filename)
-		if err := os.MkdirAll(filepath.Dir(fileloc), 0o771); err != nil {
-			return err
-		}
-
-		log.G(ctx).WithFields(logrus.Fields{
-			"path": fileloc,
-		}).Tracef("saving manifest")
-
-		if err := manifest.WriteToFile(fileloc); err != nil {
-			log.G(ctx).Errorf("could not save manifest: %s", err)
-		}
-	}
-
-	index.Manifests = manifests
-
-	return index.WriteToFile(m.LocalManifestIndex(ctx))
+	return index.SaveTo(m.LocalManifestIndex(ctx))
 }
 
 func (m *ManifestManager) SetSources(_ context.Context, sources ...string) error {
@@ -360,7 +324,7 @@ func (m *ManifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 		// been set.  Even if UseCache set has been set, it means that at least once
 		// call to Catalog has properly updated the index.
 		if m.indexCache == nil {
-			indexCache, err := m.update(ctx)
+			indexCache, err := m.Index(ctx)
 			if err != nil {
 				return nil, err
 			}

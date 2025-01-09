@@ -19,6 +19,7 @@ import (
 
 	"kraftkit.sh/log"
 	"kraftkit.sh/pack"
+	"kraftkit.sh/unikraft"
 
 	"kraftkit.sh/internal/version"
 )
@@ -211,7 +212,48 @@ func NewManifestIndexFromURL(ctx context.Context, path string, mopts ...Manifest
 	return index, nil
 }
 
-func (mi *ManifestIndex) WriteToFile(path string) error {
+func (mi *ManifestIndex) SaveTo(path string) error {
+	// Create parent directories if not present
+	if err := os.MkdirAll(filepath.Dir(path), 0o771); err != nil {
+		return err
+	}
+
+	// TODO: Partition directories when there is a large number of manifests
+	// TODO: Merge manifests of same name and type?
+
+	// Make a copy of the index which we'll write later.
+	dup := ManifestIndex{
+		Name:        mi.Name,
+		LastUpdated: mi.LastUpdated,
+		Origin:      mi.Origin,
+	}
+
+	// Only save the name, type and "manifest" (which is the location of the
+	// manifest) when saving the index.
+	for _, manifest := range mi.Manifests {
+		filename := manifest.Name + ".yaml"
+
+		if manifest.Type != unikraft.ComponentTypeCore {
+			filename = manifest.Type.Plural() + string(filepath.Separator) + filename
+		}
+
+		fileloc := filepath.Join(filepath.Dir(path), filename)
+		if err := os.MkdirAll(filepath.Dir(fileloc), 0o771); err != nil {
+			return err
+		}
+
+		if err := manifest.SaveTo(fileloc); err != nil {
+			return fmt.Errorf("could not save manifest: %w", err)
+		}
+
+		// Remember the relative path to the manifest.
+		dup.Manifests = append(dup.Manifests, &Manifest{
+			Name:     manifest.Name,
+			Type:     manifest.Type,
+			Manifest: "./" + filename,
+		})
+	}
+
 	// Open the file (create if not present)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
@@ -220,7 +262,7 @@ func (mi *ManifestIndex) WriteToFile(path string) error {
 
 	defer f.Close()
 
-	contents, err := yaml.Marshal(mi)
+	contents, err := yaml.Marshal(dup)
 	if err != nil {
 		return err
 	}
