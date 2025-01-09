@@ -134,15 +134,15 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
 			jSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Version)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
+				return index.Manifests[i].Versions[j].Version > index.Manifests[i].Versions[k].Version
 			}
 
 			kSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Version)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
+				return index.Manifests[i].Versions[j].Version > index.Manifests[i].Versions[k].Version
 			}
 
-			return jSemVer.LessThan(kSemVer)
+			return jSemVer.GreaterThan(kSemVer)
 		})
 
 		// Now, sort manifest versions by Unikraft version.  This prioritizes the
@@ -151,15 +151,15 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
 			jSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Unikraft)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
+				return index.Manifests[i].Versions[j].Unikraft > index.Manifests[i].Versions[k].Unikraft
 			}
 
 			kSemVer, err := semver.NewVersion(index.Manifests[i].Versions[k].Unikraft)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
+				return index.Manifests[i].Versions[j].Unikraft > index.Manifests[i].Versions[k].Unikraft
 			}
 
-			return jSemVer.LessThan(kSemVer)
+			return jSemVer.GreaterThan(kSemVer)
 		})
 
 		// Sort manifest channels by name
