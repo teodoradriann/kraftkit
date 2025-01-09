@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 	"unicode"
 
@@ -133,22 +132,12 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	for i := range index.Manifests {
 		// Sort manifest versions by version
 		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
-			jstr := index.Manifests[i].Versions[j].Version
-			if !strings.HasPrefix(jstr, "v") {
-				jstr = "v" + jstr
-			}
-
-			jSemVer, err := semver.NewVersion(jstr)
+			jSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Version)
 			if err != nil {
 				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
 			}
 
-			kstr := index.Manifests[i].Versions[j].Version
-			if !strings.HasPrefix(kstr, "v") {
-				kstr = "v" + kstr
-			}
-
-			kSemVer, err := semver.NewVersion(kstr)
+			kSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Version)
 			if err != nil {
 				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
 			}
@@ -160,22 +149,12 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 		// Unikraft version but ensures the latest version of manifest is also
 		// first for the given Unikraft version.
 		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
-			jstr := index.Manifests[i].Versions[j].Unikraft
-			if !strings.HasPrefix(jstr, "v") {
-				jstr = "v" + jstr
-			}
-
-			jSemVer, err := semver.NewVersion(jstr)
+			jSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Unikraft)
 			if err != nil {
 				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
 			}
 
-			kstr := index.Manifests[i].Versions[j].Unikraft
-			if !strings.HasPrefix(kstr, "v") {
-				kstr = "v" + kstr
-			}
-
-			kSemVer, err := semver.NewVersion(kstr)
+			kSemVer, err := semver.NewVersion(index.Manifests[i].Versions[k].Unikraft)
 			if err != nil {
 				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
 			}
