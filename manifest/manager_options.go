@@ -14,7 +14,7 @@ type ManifestManagerOption func(context.Context, *manifestManager) error
 
 // Set the default set of source manifests to initialize the manager with.
 // Not setting anything will result in defaults.
-func WithManifests(manifests ...string) ManifestManagerOption {
+func WithManagerManifests(manifests ...string) ManifestManagerOption {
 	return func(ctx context.Context, m *manifestManager) error {
 		m.manifests = manifests
 		return nil
@@ -22,7 +22,7 @@ func WithManifests(manifests ...string) ManifestManagerOption {
 }
 
 // Set the local directory where the manifests are stored.
-func WithLocalManifestDir(dir string) ManifestManagerOption {
+func WithManagerLocalManifestDir(dir string) ManifestManagerOption {
 	return func(ctx context.Context, m *manifestManager) error {
 		m.localManifestDir = dir
 		return nil
