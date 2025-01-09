@@ -97,7 +97,7 @@ func Build(ctx context.Context, opts *BuildOptions, args ...string) error {
 		}
 	}
 
-	if build == nil {
+	if build == nil || opts.Project == nil {
 		return ErrContextNotBuildable
 	}
 
