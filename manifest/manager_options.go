@@ -20,3 +20,11 @@ func WithManifests(manifests ...string) ManifestManagerOption {
 		return nil
 	}
 }
+
+// Set the local directory where the manifests are stored.
+func WithLocalManifestDir(dir string) ManifestManagerOption {
+	return func(ctx context.Context, m *manifestManager) error {
+		m.localManifestDir = dir
+		return nil
+	}
+}
