@@ -154,6 +154,33 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 			return jSemVer.LessThan(kSemVer)
 		})
 
+		// Now, sort manifest versions by Unikraft version.  This prioritizes the
+		// Unikraft version but ensures the latest version of manifest is also
+		// first for the given Unikraft version.
+		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
+			jstr := index.Manifests[i].Versions[j].Unikraft
+			if !strings.HasPrefix(jstr, "v") {
+				jstr = "v" + jstr
+			}
+
+			jSemVer, err := semver.NewVersion(jstr)
+			if err != nil {
+				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
+			}
+
+			kstr := index.Manifests[i].Versions[j].Unikraft
+			if !strings.HasPrefix(kstr, "v") {
+				kstr = "v" + kstr
+			}
+
+			kSemVer, err := semver.NewVersion(kstr)
+			if err != nil {
+				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
+			}
+
+			return jSemVer.LessThan(kSemVer)
+		})
+
 		// Sort manifest channels by name
 		sort.Slice(index.Manifests[i].Channels, func(j, k int) bool {
 			return index.Manifests[i].Channels[j].Name < index.Manifests[i].Channels[k].Name
