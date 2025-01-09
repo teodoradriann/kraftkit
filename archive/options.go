@@ -6,6 +6,7 @@ package archive
 
 type UnarchiveOptions struct {
 	stripComponents int
+	stripIfOnlyDir  bool
 }
 
 type UnarchiveOption func(uo *UnarchiveOptions) error
@@ -17,6 +18,14 @@ func StripComponents(sc int) UnarchiveOption {
 		}
 
 		uo.stripComponents = sc
+		return nil
+	}
+}
+
+// If there exists only one top-level directory, strip it.
+func StripIfSingleTopLevelDir() UnarchiveOption {
+	return func(uo *UnarchiveOptions) error {
+		uo.stripIfOnlyDir = true
 		return nil
 	}
 }

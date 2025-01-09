@@ -72,6 +72,17 @@ func NewProvider(ctx context.Context, path string, mopts ...ManifestOption) (Pro
 		return provider, nil
 	}
 
+	log.G(ctx).WithFields(logrus.Fields{
+		"path": path,
+	}).Trace("trying tarball provider")
+	provider, err = NewTarballProvider(ctx, path, mopts...)
+	if err == nil {
+		log.G(ctx).WithFields(logrus.Fields{
+			"path": path,
+		}).Trace("using tarball provider")
+		return provider, nil
+	}
+
 	// First attempt to detect whether the provided input is a Git repository.  If
 	// it is, it could potentially be from GitHub as well.
 	log.G(ctx).WithFields(logrus.Fields{
