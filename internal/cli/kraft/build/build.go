@@ -46,6 +46,7 @@ type BuildOptions struct {
 	NoFetch      bool            `long:"no-fetch" usage:"Do not run Unikraft's fetch step before building"`
 	NoRootfs     bool            `long:"no-rootfs" usage:"Do not build the root file system (initramfs)"`
 	NoUpdate     bool            `long:"no-update" usage:"Do not update package index before running the build"`
+	Output       string          `long:"output" short:"o" usage:"Set the output directory for the build artifacts"`
 	Platform     string          `long:"plat" short:"p" usage:"Filter the creation of the build by platform of known targets (fc/qemu/xen)"`
 	PrintStats   bool            `long:"print-stats" usage:"Print build statistics"`
 	Project      app.Application `noattribute:"true"`

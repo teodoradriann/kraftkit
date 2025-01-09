@@ -26,6 +26,10 @@ func (opts *BuildOptions) initProject(ctx context.Context) error {
 		popts = append(popts, app.WithProjectDefaultKraftfiles())
 	}
 
+	if opts.Output != "" {
+		popts = append(popts, app.WithProjectOutDir(opts.Output))
+	}
+
 	// Interpret the project directory
 	opts.Project, err = app.NewProjectFromOptions(ctx, popts...)
 	if err != nil {
