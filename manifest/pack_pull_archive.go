@@ -129,7 +129,7 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 
 		get.Header.Set("User-Agent", version.UserAgent())
 		if authenticated {
-			head.Header.Set("Authorization", authHeader)
+			get.Header.Set("Authorization", authHeader)
 		}
 
 		log.G(ctx).WithFields(logrus.Fields{
