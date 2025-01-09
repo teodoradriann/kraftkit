@@ -38,3 +38,11 @@ func WithManagerAuths(auths map[string]config.AuthConfig) ManifestManagerOption 
 		return nil
 	}
 }
+
+// Sets the default channel name to use when multiple channels are specified.
+func WithManagerDefaultChannelName(name string) ManifestManagerOption {
+	return func(ctx context.Context, m *manifestManager) error {
+		m.defaultChannelName = name
+		return nil
+	}
+}

@@ -106,12 +106,6 @@ func NewGitProvider(ctx context.Context, path string, opts ...ManifestOption) (P
 func (gp *GitProvider) probeChannels() []ManifestChannel {
 	var channels []ManifestChannel
 
-	// This is unikraft-centric ettiquette where there exists two branches:
-	// "stable" and "staging".  If these two channels exist, then later on we'll
-	// update the "stable" channel to be the default.
-	haveStaging := false
-	haveStable := false
-
 	for _, ref := range gp.refs {
 		// Branches are channels
 		if ref.Name().IsBranch() {
@@ -124,27 +118,13 @@ func (gp *GitProvider) probeChannels() []ManifestChannel {
 				Resource: gp.repo,
 			}
 
-			// Unikraft-centric naming conventions
-			if ref.Name().Short() == "staging" {
-				haveStaging = true
-			} else if ref.Name().Short() == "stable" {
-				haveStable = true
+			if ref.Name().Short() == gp.mopts.defaultChannelName {
+				channel.Default = true
 			}
 
 			channels = append(channels, channel)
 			continue
 		}
-	}
-
-	if haveStaging && haveStable {
-		for i, channel := range channels {
-			if channel.Name == "stable" {
-				channel.Default = true
-				channels[i] = channel
-			}
-		}
-	} else if len(gp.branch) > 0 && len(channels) == 1 {
-		channels[0].Default = true
 	}
 
 	return channels

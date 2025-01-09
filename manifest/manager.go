@@ -27,10 +27,11 @@ import (
 )
 
 type manifestManager struct {
-	manifests        []string
-	indexCache       *ManifestIndex
-	localManifestDir string
-	auths            map[string]config.AuthConfig
+	manifests          []string
+	indexCache         *ManifestIndex
+	localManifestDir   string
+	auths              map[string]config.AuthConfig
+	defaultChannelName string
 }
 
 // NewManifestManager returns a `packmanager.PackageManager` which manipulates
@@ -74,6 +75,10 @@ func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageMa
 		}
 	}
 
+	if manager.defaultChannelName == "" {
+		manager.defaultChannelName = DefaultChannelName
+	}
+
 	return &manager, nil
 }
 
@@ -106,6 +111,7 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 		WithAuthConfig(m.auths),
 		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
 		WithUpdate(true),
+		WithDefaultChannelName(m.defaultChannelName),
 	}
 
 	for _, manipath := range m.manifests {
@@ -270,6 +276,7 @@ func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.Query
 			WithAuthConfig(query.Auths()),
 			WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
 			WithUpdate(query.Remote()),
+			WithDefaultChannelName(m.defaultChannelName),
 		)
 		if err != nil {
 			return err
@@ -319,6 +326,7 @@ func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 		WithAuthConfig(query.Auths()),
 		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
 		WithUpdate(query.Remote()),
+		WithDefaultChannelName(m.defaultChannelName),
 	}
 
 	log.G(ctx).WithFields(query.Fields()).Debug("querying manifest catalog")

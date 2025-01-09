@@ -76,7 +76,7 @@ func (dp DirectoryProvider) Manifests() ([]*Manifest, error) {
 		Origin:   dp.dir,
 		Channels: []ManifestChannel{
 			{
-				Name:     "default",
+				Name:     dp.mopts.defaultChannelName,
 				Default:  true,
 				Resource: dp.dir,
 			},

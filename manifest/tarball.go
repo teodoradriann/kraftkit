@@ -64,7 +64,7 @@ func (provider TarballProvider) Manifests() ([]*Manifest, error) {
 			Origin:   provider.path,
 			Channels: []ManifestChannel{
 				{
-					Name:     "default",
+					Name:     provider.mopts.defaultChannelName,
 					Default:  true,
 					Resource: provider.path,
 				},
