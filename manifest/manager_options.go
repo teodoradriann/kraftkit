@@ -6,6 +6,8 @@ package manifest
 
 import (
 	"context"
+
+	"kraftkit.sh/config"
 )
 
 // ManifestManagerOption represents a specific configuration that can be used
@@ -25,6 +27,14 @@ func WithManagerManifests(manifests ...string) ManifestManagerOption {
 func WithManagerLocalManifestDir(dir string) ManifestManagerOption {
 	return func(ctx context.Context, m *manifestManager) error {
 		m.localManifestDir = dir
+		return nil
+	}
+}
+
+// Set the default set of auths to initialize the manager with.
+func WithManagerAuths(auths map[string]config.AuthConfig) ManifestManagerOption {
+	return func(ctx context.Context, m *manifestManager) error {
+		m.auths = auths
 		return nil
 	}
 }

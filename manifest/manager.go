@@ -30,6 +30,7 @@ type manifestManager struct {
 	manifests        []string
 	indexCache       *ManifestIndex
 	localManifestDir string
+	auths            map[string]config.AuthConfig
 }
 
 // NewManifestManager returns a `packmanager.PackageManager` which manipulates
@@ -46,6 +47,10 @@ func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageMa
 		if err := opt(ctx, &manager); err != nil {
 			return nil, err
 		}
+	}
+
+	if len(manager.auths) == 0 {
+		manager.auths = config.G[config.KraftKit](ctx).Auth
 	}
 
 	if len(manager.manifests) == 0 {
@@ -98,7 +103,7 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	}
 
 	mopts := []ManifestOption{
-		WithAuthConfig(config.G[config.KraftKit](ctx).Auth),
+		WithAuthConfig(m.auths),
 		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
 		WithUpdate(true),
 	}
