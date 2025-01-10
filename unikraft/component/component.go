@@ -88,6 +88,10 @@ func TranslateFromSchema(props interface{}) (map[string]interface{}, error) {
 				if err != nil {
 					return nil, err
 				}
+
+			// Support for additional properties.
+			default:
+				component[key] = prop
 			}
 		}
 	}
