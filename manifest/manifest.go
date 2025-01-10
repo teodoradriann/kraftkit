@@ -6,6 +6,7 @@ package manifest
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -283,10 +284,25 @@ func NewManifestFromFile(ctx context.Context, path string, mopts ...ManifestOpti
 
 // NewManifestFromURL retrieves a provided path as a Manifest from a remote
 // location over HTTP
-func NewManifestFromURL(ctx context.Context, path string, mopts ...ManifestOption) (*Manifest, error) {
+func NewManifestFromURL(ctx context.Context, path string, opts ...ManifestOption) (*Manifest, error) {
 	u, err := url.Parse(path)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return nil, fmt.Errorf("provided path was not a valid URL")
+	}
+
+	mopts := NewManifestOptions(opts...)
+	authHeader := ""
+	authenticated := false
+
+	if auth, ok := mopts.auths[u.Host]; ok {
+		if len(auth.User) > 0 {
+			authenticated = true
+			authHeader = "Basic " + base64.StdEncoding.
+				EncodeToString([]byte(auth.User+":"+auth.Token))
+		} else if len(auth.Token) > 0 {
+			authenticated = true
+			authHeader = "Bearer " + auth.Token
+		}
 	}
 
 	var contents []byte
@@ -298,10 +314,14 @@ func NewManifestFromURL(ctx context.Context, path string, mopts ...ManifestOptio
 	}
 
 	head.Header.Set("User-Agent", version.UserAgent())
+	if authenticated {
+		head.Header.Set("Authorization", authHeader)
+	}
 
 	log.G(ctx).WithFields(logrus.Fields{
-		"url":    path,
-		"method": "HEAD",
+		"url":           path,
+		"method":        "HEAD",
+		"authenticated": authenticated,
 	}).Trace("http")
 
 	resp, err := client.Do(head)
@@ -319,10 +339,14 @@ func NewManifestFromURL(ctx context.Context, path string, mopts ...ManifestOptio
 	}
 
 	get.Header.Set("User-Agent", version.UserAgent())
+	if authenticated {
+		get.Header.Set("Authorization", authHeader)
+	}
 
 	log.G(ctx).WithFields(logrus.Fields{
-		"url":    path,
-		"method": "GET",
+		"url":           path,
+		"method":        "GET",
+		"authenticated": authenticated,
 	}).Trace("http")
 
 	resp, err = client.Do(get)
@@ -346,7 +370,7 @@ func NewManifestFromURL(ctx context.Context, path string, mopts ...ManifestOptio
 		return nil, err
 	}
 
-	manifest, err := NewManifestFromBytes(ctx, contents, mopts...)
+	manifest, err := NewManifestFromBytes(ctx, contents, opts...)
 	if err != nil {
 		return nil, err
 	}

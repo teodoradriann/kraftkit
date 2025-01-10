@@ -6,6 +6,7 @@ package manifest
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -119,7 +120,7 @@ func NewManifestIndexFromBytes(raw []byte, opts ...ManifestOption) (*ManifestInd
 	return index, nil
 }
 
-func NewManifestIndexFromFile(path string, mopts ...ManifestOption) (*ManifestIndex, error) {
+func NewManifestIndexFromFile(path string, opts ...ManifestOption) (*ManifestIndex, error) {
 	f, err := os.Stat(path)
 	if err != nil {
 		return nil, err
@@ -132,7 +133,7 @@ func NewManifestIndexFromFile(path string, mopts ...ManifestOption) (*ManifestIn
 		return nil, err
 	}
 
-	index, err := NewManifestIndexFromBytes(contents, mopts...)
+	index, err := NewManifestIndexFromBytes(contents, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,10 +145,25 @@ func NewManifestIndexFromFile(path string, mopts ...ManifestOption) (*ManifestIn
 
 // NewManifestFromURL retrieves a provided path as a ManifestIndex from a remote
 // location over HTTP
-func NewManifestIndexFromURL(ctx context.Context, path string, mopts ...ManifestOption) (*ManifestIndex, error) {
-	_, err := url.Parse(path)
+func NewManifestIndexFromURL(ctx context.Context, path string, opts ...ManifestOption) (*ManifestIndex, error) {
+	u, err := url.Parse(path)
 	if err != nil {
 		return nil, err
+	}
+
+	mopts := NewManifestOptions(opts...)
+	authHeader := ""
+	authenticated := false
+
+	if auth, ok := mopts.auths[u.Host]; ok {
+		if len(auth.User) > 0 {
+			authenticated = true
+			authHeader = "Basic " + base64.StdEncoding.
+				EncodeToString([]byte(auth.User+":"+auth.Token))
+		} else if len(auth.Token) > 0 {
+			authenticated = true
+			authHeader = "Bearer " + auth.Token
+		}
 	}
 
 	client := &http.Client{}
@@ -158,10 +174,14 @@ func NewManifestIndexFromURL(ctx context.Context, path string, mopts ...Manifest
 	}
 
 	head.Header.Set("User-Agent", version.UserAgent())
+	if authenticated {
+		head.Header.Set("Authorization", authHeader)
+	}
 
 	log.G(ctx).WithFields(logrus.Fields{
-		"url":    path,
-		"method": "HEAD",
+		"url":           path,
+		"method":        "HEAD",
+		"authenticated": authenticated,
 	}).Trace("http")
 
 	resp, err := client.Do(head)
@@ -179,10 +199,14 @@ func NewManifestIndexFromURL(ctx context.Context, path string, mopts ...Manifest
 	}
 
 	get.Header.Set("User-Agent", version.UserAgent())
+	if authenticated {
+		get.Header.Set("Authorization", authHeader)
+	}
 
 	log.G(ctx).WithFields(logrus.Fields{
-		"url":    path,
-		"method": "GET",
+		"url":           path,
+		"method":        "GET",
+		"authenticated": authenticated,
 	}).Trace("http")
 
 	resp, err = client.Do(get)
@@ -192,7 +216,7 @@ func NewManifestIndexFromURL(ctx context.Context, path string, mopts ...Manifest
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("received %d error when retreiving: %s", resp.StatusCode, path)
+		return nil, fmt.Errorf("received %d error when retrieving: %s", resp.StatusCode, path)
 	}
 
 	// Check if we're directly pointing to a compatible manifest file
@@ -206,7 +230,7 @@ func NewManifestIndexFromURL(ctx context.Context, path string, mopts ...Manifest
 		return nil, err
 	}
 
-	index, err := NewManifestIndexFromBytes(contents, mopts...)
+	index, err := NewManifestIndexFromBytes(contents, opts...)
 	if err != nil {
 		return nil, err
 	}
