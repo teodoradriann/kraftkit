@@ -104,12 +104,8 @@ func (mp *ManifestProvider) Manifests() ([]*Manifest, error) {
 func (mp *ManifestProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, opts ...pack.PullOption) error {
 	manifest.mopts = mp.manifest.mopts
 
-	// If the user has requested to pull the manifest via git, and it passes,
-	// great, otherwise fall back to archive pull.
 	if useGit {
-		if err := pullGit(ctx, manifest, opts...); err == nil {
-			return nil
-		}
+		return pullGit(ctx, manifest, opts...)
 	}
 
 	return pullArchive(ctx, manifest, channel.Resource, channel.Sha256, opts...)
@@ -118,12 +114,8 @@ func (mp *ManifestProvider) PullChannel(ctx context.Context, manifest *Manifest,
 func (mp *ManifestProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, opts ...pack.PullOption) error {
 	manifest.mopts = mp.manifest.mopts
 
-	// If the user has requested to pull the manifest via git, and it passes,
-	// great, otherwise fall back to archive pull.
 	if useGit {
-		if err := pullGit(ctx, manifest, opts...); err == nil {
-			return nil
-		}
+		return pullGit(ctx, manifest, opts...)
 	}
 
 	return pullArchive(ctx, manifest, version.Resource, version.Sha256, opts...)
