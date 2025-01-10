@@ -38,7 +38,7 @@ type CreateOptions struct {
 	Auth                *config.AuthConfig             `noattribute:"true"`
 	Client              kraftcloud.KraftCloud          `noattribute:"true"`
 	Certificate         []string                       `local:"true" long:"certificate" short:"c" usage:"Set the certificates to use for the service"`
-	Env                 []string                       `local:"true" long:"env" short:"e" usage:"Environmental variables"`
+	Env                 []string                       `local:"true" long:"env" short:"e" usage:"Environmental variables" split:"false"`
 	Features            []string                       `local:"true" long:"feature" short:"f" usage:"List of features to enable"`
 	Domain              []string                       `local:"true" long:"domain" short:"d" usage:"The domain names to use for the service"`
 	Image               string                         `noattribute:"true"`
