@@ -100,6 +100,7 @@
       "type": [ "string", "object" ],
       "properties": {
         "source": { "type": "string" },
+        "name": { "type": "string" },
         "version": { "type": [ "string", "number" ] },
         "kconfig": { "$ref": "#/definitions/list_or_dict" }
       },
