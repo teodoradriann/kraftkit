@@ -8,11 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 	"unicode"
 
@@ -28,26 +25,45 @@ import (
 	"kraftkit.sh/unikraft/component"
 )
 
-type manifestManager struct {
-	manifests        []string
-	indexCache       *ManifestIndex
-	localManifestDir string
+type ManifestManager struct {
+	manifests          []string
+	indexCache         *ManifestIndex
+	localManifestDir   string
+	auths              map[string]config.AuthConfig
+	defaultChannelName string
+	cacheDir           string
 }
 
-// NewManifestManager returns a `packmanager.PackageManager` which manipulates
-// Unikraft manifests.
-func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageManager, error) {
-	manager := manifestManager{}
-
-	for _, mopt := range opts {
-		opt, ok := mopt.(ManifestManagerOption)
-		if !ok {
-			return nil, fmt.Errorf("cannot cast ManifestManager option")
+// NewPackageManager satisfies the `packmanager.NewPackageManager` interface
+// and returns a new `packmanager.PackageManager` for the manifest manager.
+func NewPackageManager(ctx context.Context, opts ...any) (packmanager.PackageManager, error) {
+	mopts := make([]ManifestManagerOption, 0)
+	for _, opt := range opts {
+		if o, ok := opt.(ManifestManagerOption); ok {
+			mopts = append(mopts, o)
 		}
+	}
 
+	return NewManifestManager(ctx, mopts...)
+}
+
+// NewManifestManager instantiates a new package manager which manipulates
+// Unikraft manifests.
+func NewManifestManager(ctx context.Context, opts ...ManifestManagerOption) (*ManifestManager, error) {
+	manager := ManifestManager{}
+
+	for _, opt := range opts {
 		if err := opt(ctx, &manager); err != nil {
 			return nil, err
 		}
+	}
+
+	if len(manager.auths) == 0 {
+		manager.auths = config.G[config.KraftKit](ctx).Auth
+	}
+
+	if len(manager.cacheDir) == 0 {
+		manager.cacheDir = config.G[config.KraftKit](ctx).Paths.Sources
 	}
 
 	if len(manager.manifests) == 0 {
@@ -71,11 +87,15 @@ func NewManifestManager(ctx context.Context, opts ...any) (packmanager.PackageMa
 		}
 	}
 
+	if manager.defaultChannelName == "" {
+		manager.defaultChannelName = DefaultChannelName
+	}
+
 	return &manager, nil
 }
 
-// update retrieves and returns a cache of the upstream manifest registry
-func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
+// Index retrieves and returns a cache of the upstream manifest registry
+func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
 	if len(m.manifests) == 0 {
 		// In this scenario, re-attempt all manifests provided within the config
 		// space which were not remotely probed during initialization.
@@ -100,9 +120,10 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	}
 
 	mopts := []ManifestOption{
-		WithAuthConfig(config.G[config.KraftKit](ctx).Auth),
-		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
+		WithAuthConfig(m.auths),
+		WithCacheDir(m.cacheDir),
 		WithUpdate(true),
+		WithDefaultChannelName(m.defaultChannelName),
 	}
 
 	for _, manipath := range m.manifests {
@@ -134,54 +155,34 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	for i := range index.Manifests {
 		// Sort manifest versions by version
 		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
-			jstr := index.Manifests[i].Versions[j].Version
-			if !strings.HasPrefix(jstr, "v") {
-				jstr = "v" + jstr
-			}
-
-			jSemVer, err := semver.NewVersion(jstr)
+			jSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Version)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
+				return index.Manifests[i].Versions[j].Version > index.Manifests[i].Versions[k].Version
 			}
 
-			kstr := index.Manifests[i].Versions[j].Version
-			if !strings.HasPrefix(kstr, "v") {
-				kstr = "v" + kstr
-			}
-
-			kSemVer, err := semver.NewVersion(kstr)
+			kSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Version)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Version < index.Manifests[i].Versions[k].Version
+				return index.Manifests[i].Versions[j].Version > index.Manifests[i].Versions[k].Version
 			}
 
-			return jSemVer.LessThan(kSemVer)
+			return jSemVer.GreaterThan(kSemVer)
 		})
 
 		// Now, sort manifest versions by Unikraft version.  This prioritizes the
 		// Unikraft version but ensures the latest version of manifest is also
 		// first for the given Unikraft version.
 		sort.Slice(index.Manifests[i].Versions, func(j, k int) bool {
-			jstr := index.Manifests[i].Versions[j].Unikraft
-			if !strings.HasPrefix(jstr, "v") {
-				jstr = "v" + jstr
-			}
-
-			jSemVer, err := semver.NewVersion(jstr)
+			jSemVer, err := semver.NewVersion(index.Manifests[i].Versions[j].Unikraft)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
+				return index.Manifests[i].Versions[j].Unikraft > index.Manifests[i].Versions[k].Unikraft
 			}
 
-			kstr := index.Manifests[i].Versions[j].Unikraft
-			if !strings.HasPrefix(kstr, "v") {
-				kstr = "v" + kstr
-			}
-
-			kSemVer, err := semver.NewVersion(kstr)
+			kSemVer, err := semver.NewVersion(index.Manifests[i].Versions[k].Unikraft)
 			if err != nil {
-				return index.Manifests[i].Versions[j].Unikraft < index.Manifests[i].Versions[k].Unikraft
+				return index.Manifests[i].Versions[j].Unikraft > index.Manifests[i].Versions[k].Unikraft
 			}
 
-			return jSemVer.LessThan(kSemVer)
+			return jSemVer.GreaterThan(kSemVer)
 		})
 
 		// Sort manifest channels by name
@@ -193,88 +194,31 @@ func (m *manifestManager) update(ctx context.Context) (*ManifestIndex, error) {
 	return index, nil
 }
 
-func (m *manifestManager) Update(ctx context.Context) error {
-	index, err := m.update(ctx)
+func (m *ManifestManager) Update(ctx context.Context) error {
+	index, err := m.Index(ctx)
 	if err != nil {
 		return err
 	}
 
+	m.indexCache = index
+
 	return m.saveIndex(ctx, index)
 }
 
-func (m *manifestManager) saveIndex(ctx context.Context, index *ManifestIndex) error {
+func (m *ManifestManager) saveIndex(ctx context.Context, index *ManifestIndex) error {
 	if index == nil {
 		return nil
 	}
 
-	m.indexCache = new(ManifestIndex)
-	*m.indexCache = *index
-
-	manifests := make([]*Manifest, len(index.Manifests))
-
-	// Create parent directories if not present
-	if err := os.MkdirAll(filepath.Dir(m.LocalManifestIndex(ctx)), 0o771); err != nil {
-		return err
-	}
-
-	// TODO: Partition directories when there is a large number of manifests
-	// TODO: Merge manifests of same name and type?
-
-	// Create a file for each manifest
-	for i, manifest := range index.Manifests {
-		filename := manifest.Name + ".yaml"
-
-		if manifest.Type != unikraft.ComponentTypeCore {
-			filename = manifest.Type.Plural() + string(filepath.Separator) + filename
-		}
-
-		fileloc := filepath.Join(m.LocalManifestsDir(ctx), filename)
-		if err := os.MkdirAll(filepath.Dir(fileloc), 0o771); err != nil {
-			return err
-		}
-
-		log.G(ctx).WithFields(logrus.Fields{
-			"path": fileloc,
-		}).Tracef("saving manifest")
-
-		if err := manifest.WriteToFile(fileloc); err != nil {
-			log.G(ctx).Errorf("could not save manifest: %s", err)
-		}
-
-		// Replace manifest with relative path
-		manifests[i] = &Manifest{
-			Name:     manifest.Name,
-			Type:     manifest.Type,
-			Manifest: "./" + filename,
-		}
-	}
-
-	index.Manifests = manifests
-
-	// Sort the names of packages alphabetically.
-	sort.Slice(index.Manifests, func(i, j int) bool {
-		// Check if we have numbers, sort them accordingly
-		if z, err := strconv.Atoi(index.Manifests[i].Name); err == nil {
-			if y, err := strconv.Atoi(index.Manifests[j].Name); err == nil {
-				return y < z
-			}
-			// If we get only one number, alway say its greater than letter
-			return true
-		}
-
-		// Compare letters normally
-		return index.Manifests[j].Name > index.Manifests[i].Name
-	})
-
-	return index.WriteToFile(m.LocalManifestIndex(ctx))
+	return index.SaveTo(m.LocalManifestIndex(ctx))
 }
 
-func (m *manifestManager) SetSources(_ context.Context, sources ...string) error {
+func (m *ManifestManager) SetSources(_ context.Context, sources ...string) error {
 	m.manifests = sources
 	return nil
 }
 
-func (m *manifestManager) AddSource(ctx context.Context, source string) error {
+func (m *ManifestManager) AddSource(ctx context.Context, source string) error {
 	if m.manifests == nil {
 		m.manifests = make([]string, 0)
 	}
@@ -285,7 +229,7 @@ func (m *manifestManager) AddSource(ctx context.Context, source string) error {
 }
 
 // Delete implements packmanager.PackageManager.
-func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.QueryOption) error {
+func (m *ManifestManager) Delete(ctx context.Context, qopts ...packmanager.QueryOption) error {
 	packs, err := m.Catalog(ctx, qopts...)
 	if err != nil {
 		return err
@@ -307,8 +251,9 @@ func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.Query
 		manifests, err := FindManifestsFromSource(ctx,
 			m.indexCache.Origin,
 			WithAuthConfig(query.Auths()),
-			WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
+			WithCacheDir(m.cacheDir),
 			WithUpdate(query.Remote()),
+			WithDefaultChannelName(m.defaultChannelName),
 		)
 		if err != nil {
 			return err
@@ -324,7 +269,7 @@ func (m *manifestManager) Delete(ctx context.Context, qopts ...packmanager.Query
 	return errors.Join(errs...)
 }
 
-func (m *manifestManager) RemoveSource(ctx context.Context, source string) error {
+func (m *ManifestManager) RemoveSource(ctx context.Context, source string) error {
 	for i, needle := range m.manifests {
 		if needle == source {
 			ret := make([]string, 0)
@@ -337,19 +282,19 @@ func (m *manifestManager) RemoveSource(ctx context.Context, source string) error
 	return nil
 }
 
-func (m *manifestManager) Pack(ctx context.Context, c component.Component, opts ...packmanager.PackOption) ([]pack.Package, error) {
+func (m *ManifestManager) Pack(ctx context.Context, c component.Component, opts ...packmanager.PackOption) ([]pack.Package, error) {
 	return nil, fmt.Errorf("not implemented manifest.manager.Pack")
 }
 
-func (m *manifestManager) Unpack(ctx context.Context, p pack.Package, opts ...packmanager.UnpackOption) ([]component.Component, error) {
+func (m *ManifestManager) Unpack(ctx context.Context, p pack.Package, opts ...packmanager.UnpackOption) ([]component.Component, error) {
 	return nil, fmt.Errorf("not implemented manifest.manager.Unpack")
 }
 
-func (m *manifestManager) From(sub pack.PackageFormat) (packmanager.PackageManager, error) {
+func (m *ManifestManager) From(sub pack.PackageFormat) (packmanager.PackageManager, error) {
 	return nil, fmt.Errorf("method not applicable to manifest manager")
 }
 
-func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.QueryOption) ([]pack.Package, error) {
+func (m *ManifestManager) Catalog(ctx context.Context, qopts ...packmanager.QueryOption) ([]pack.Package, error) {
 	var err error
 	var manifests []*Manifest
 
@@ -358,6 +303,7 @@ func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 		WithAuthConfig(query.Auths()),
 		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
 		WithUpdate(query.Remote()),
+		WithDefaultChannelName(m.defaultChannelName),
 	}
 
 	log.G(ctx).WithFields(query.Fields()).Debug("querying manifest catalog")
@@ -378,7 +324,7 @@ func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 		// been set.  Even if UseCache set has been set, it means that at least once
 		// call to Catalog has properly updated the index.
 		if m.indexCache == nil {
-			indexCache, err := m.update(ctx)
+			indexCache, err := m.Index(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -536,7 +482,7 @@ func (m *manifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 	return packages, nil
 }
 
-func (m *manifestManager) IsCompatible(ctx context.Context, source string, qopts ...packmanager.QueryOption) (packmanager.PackageManager, bool, error) {
+func (m *ManifestManager) IsCompatible(ctx context.Context, source string, qopts ...packmanager.QueryOption) (packmanager.PackageManager, bool, error) {
 	log.G(ctx).WithFields(logrus.Fields{
 		"source": source,
 	}).Trace("checking if source is compatible with the manifest manager")
@@ -559,7 +505,7 @@ func (m *manifestManager) IsCompatible(ctx context.Context, source string, qopts
 }
 
 // LocalManifestDir returns the user configured path to all the manifests
-func (m *manifestManager) LocalManifestsDir(ctx context.Context) string {
+func (m *ManifestManager) LocalManifestsDir(ctx context.Context) string {
 	if len(m.localManifestDir) > 0 {
 		return m.localManifestDir
 	}
@@ -572,10 +518,10 @@ func (m *manifestManager) LocalManifestsDir(ctx context.Context) string {
 }
 
 // LocalManifestIndex returns the user configured path to the manifest index
-func (m *manifestManager) LocalManifestIndex(ctx context.Context) string {
+func (m *ManifestManager) LocalManifestIndex(ctx context.Context) string {
 	return filepath.Join(m.LocalManifestsDir(ctx), "index.yaml")
 }
 
-func (m *manifestManager) Format() pack.PackageFormat {
+func (m *ManifestManager) Format() pack.PackageFormat {
 	return ManifestFormat
 }

@@ -8,6 +8,10 @@ import (
 	"kraftkit.sh/config"
 )
 
+// DefaultChannelName is the default channel name to use when multiple channels
+// are specified.
+const DefaultChannelName = "stable"
+
 // ManifestOptions contains a set of additional configuration necessary for the
 // underlying ManifestProvider implementation that are not attributes of the
 // provider itself.
@@ -27,6 +31,10 @@ type ManifestOptions struct {
 	// opts saves the options that were used to instantiated this ManifestOptions
 	// struct.
 	opts []ManifestOption
+
+	// defaultChannelName is the default channel name to use when multiple
+	// channels are specified.
+	defaultChannelName string
 }
 
 type ManifestOption func(*ManifestOptions)
@@ -40,6 +48,11 @@ func NewManifestOptions(opts ...ManifestOption) *ManifestOptions {
 	for _, opt := range opts {
 		opt(&mopts)
 	}
+
+	if mopts.defaultChannelName == "" {
+		mopts.defaultChannelName = DefaultChannelName
+	}
+
 	return &mopts
 }
 
@@ -66,5 +79,13 @@ func WithCacheDir(dir string) ManifestOption {
 func WithUpdate(update bool) ManifestOption {
 	return func(mopts *ManifestOptions) {
 		mopts.update = update
+	}
+}
+
+// WithDefaultChannelName sets the default channel name to use when multiple
+// channels are specified.
+func WithDefaultChannelName(name string) ManifestOption {
+	return func(mopts *ManifestOptions) {
+		mopts.defaultChannelName = name
 	}
 }

@@ -42,16 +42,23 @@ func (pp *pullProgressArchive) Write(p []byte) (n int, err error) {
 
 // pullArchive is used internally to pull a specific Manifest resource using the
 // conventional archive.
-func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) error {
+func pullArchive(ctx context.Context, manifest *Manifest, resource string, checksum string, opts ...pack.PullOption) error {
+	if manifest.mopts.cacheDir == "" {
+		return fmt.Errorf("cannot determine cache dir")
+	}
+
 	popts, err := pack.NewPullOptions(opts...)
 	if err != nil {
 		return err
 	}
 
-	resource, cache, checksum, err := resourceCacheChecksum(manifest)
-	if err != nil {
-		return err
+	cache := manifest.Name + string(filepath.Separator) + filepath.Base(resource)
+
+	if manifest.Type != unikraft.ComponentTypeCore {
+		cache = manifest.Type.Plural() + string(filepath.Separator) + cache
 	}
+
+	cache = filepath.Join(manifest.mopts.cacheDir, cache)
 
 	pp := &pullProgressArchive{
 		onProgress: popts.OnProgress,
@@ -129,7 +136,7 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 
 		get.Header.Set("User-Agent", version.UserAgent())
 		if authenticated {
-			head.Header.Set("Authorization", authHeader)
+			get.Header.Set("Authorization", authHeader)
 		}
 
 		log.G(ctx).WithFields(logrus.Fields{
@@ -143,7 +150,7 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 		if err != nil {
 			return fmt.Errorf("could not initialize GET request to download package: %v", err)
 		} else if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("received non-200 HTTP status code when attempting to download package: %v", err)
+			return fmt.Errorf("received %d HTTP status code when attempting to download package", res.StatusCode)
 		}
 
 		defer res.Body.Close()
@@ -204,9 +211,9 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 		}).Debug("using cache")
 	}
 
-	local := cache
+	// Unarchive the package to the given workdir
 	if len(popts.Workdir()) > 0 {
-		local, err = unikraft.PlaceComponent(
+		local, err := unikraft.PlaceComponent(
 			popts.Workdir(),
 			manifest.Type,
 			manifest.Name,
@@ -214,10 +221,7 @@ func pullArchive(ctx context.Context, manifest *Manifest, opts ...pack.PullOptio
 		if err != nil {
 			return fmt.Errorf("could not place component package: %s", err)
 		}
-	}
 
-	// Unarchive the package to the given workdir
-	if len(local) > 0 {
 		log.G(ctx).WithFields(logrus.Fields{
 			"from": cache,
 			"to":   local,

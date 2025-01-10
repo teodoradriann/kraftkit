@@ -6,25 +6,51 @@ package manifest
 
 import (
 	"context"
+
+	"kraftkit.sh/config"
 )
 
 // ManifestManagerOption represents a specific configuration that can be used
 // for the Manifest Package Manager.
-type ManifestManagerOption func(context.Context, *manifestManager) error
+type ManifestManagerOption func(context.Context, *ManifestManager) error
 
 // Set the default set of source manifests to initialize the manager with.
 // Not setting anything will result in defaults.
-func WithManifests(manifests ...string) ManifestManagerOption {
-	return func(ctx context.Context, m *manifestManager) error {
+func WithManagerManifests(manifests ...string) ManifestManagerOption {
+	return func(ctx context.Context, m *ManifestManager) error {
 		m.manifests = manifests
 		return nil
 	}
 }
 
 // Set the local directory where the manifests are stored.
-func WithLocalManifestDir(dir string) ManifestManagerOption {
-	return func(ctx context.Context, m *manifestManager) error {
+func WithManagerLocalManifestDir(dir string) ManifestManagerOption {
+	return func(ctx context.Context, m *ManifestManager) error {
 		m.localManifestDir = dir
+		return nil
+	}
+}
+
+// Set the default set of auths to initialize the manager with.
+func WithManagerAuths(auths map[string]config.AuthConfig) ManifestManagerOption {
+	return func(ctx context.Context, m *ManifestManager) error {
+		m.auths = auths
+		return nil
+	}
+}
+
+// Sets the default channel name to use when multiple channels are specified.
+func WithManagerDefaultChannelName(name string) ManifestManagerOption {
+	return func(ctx context.Context, m *ManifestManager) error {
+		m.defaultChannelName = name
+		return nil
+	}
+}
+
+// Set the location of component archives which are stored locally.
+func WithManagerCacheDir(dir string) ManifestManagerOption {
+	return func(ctx context.Context, m *ManifestManager) error {
+		m.cacheDir = dir
 		return nil
 	}
 }

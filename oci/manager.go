@@ -38,7 +38,7 @@ import (
 	"kraftkit.sh/unikraft/target"
 )
 
-type ociManager struct {
+type OCIManager struct {
 	registries []string
 	auths      map[string]config.AuthConfig
 	handle     func(ctx context.Context) (context.Context, handler.Handler, error)
@@ -46,16 +46,24 @@ type ociManager struct {
 
 const OCIFormat pack.PackageFormat = "oci"
 
-// NewOCIManager instantiates a new package manager based on OCI archives.
-func NewOCIManager(ctx context.Context, opts ...any) (packmanager.PackageManager, error) {
-	manager := ociManager{}
-
-	for _, mopt := range opts {
-		opt, ok := mopt.(OCIManagerOption)
-		if !ok {
-			return nil, fmt.Errorf("cannot cast OCI Manager option")
+// NewPackageManager satisfies the `packmanager.NewPackageManager` interface
+// and returns a new `packmanager.PackageManager` for the manifest manager.
+func NewPackageManager(ctx context.Context, opts ...any) (packmanager.PackageManager, error) {
+	mopts := make([]OCIManagerOption, 0)
+	for _, opt := range opts {
+		if o, ok := opt.(OCIManagerOption); ok {
+			mopts = append(mopts, o)
 		}
+	}
 
+	return NewOCIManager(ctx, mopts...)
+}
+
+// NewOCIManager instantiates a new package manager based on OCI archives.
+func NewOCIManager(ctx context.Context, opts ...OCIManagerOption) (*OCIManager, error) {
+	manager := OCIManager{}
+
+	for _, opt := range opts {
 		if err := opt(ctx, &manager); err != nil {
 			return nil, err
 		}
@@ -69,7 +77,7 @@ func NewOCIManager(ctx context.Context, opts ...any) (packmanager.PackageManager
 }
 
 // Update implements packmanager.PackageManager
-func (manager *ociManager) Update(ctx context.Context) error {
+func (manager *OCIManager) Update(ctx context.Context) error {
 	packs, err := manager.update(ctx, nil, nil)
 	if err != nil {
 		return err
@@ -88,7 +96,7 @@ func (manager *ociManager) Update(ctx context.Context) error {
 	return nil
 }
 
-func (manager *ociManager) update(ctx context.Context, auths map[string]config.AuthConfig, query *packmanager.Query) (map[string]pack.Package, error) {
+func (manager *OCIManager) update(ctx context.Context, auths map[string]config.AuthConfig, query *packmanager.Query) (map[string]pack.Package, error) {
 	ctx, handle, err := manager.handle(ctx)
 	if err != nil {
 		return nil, err
@@ -218,7 +226,7 @@ func (manager *ociManager) update(ctx context.Context, auths map[string]config.A
 }
 
 // Pack implements packmanager.PackageManager
-func (manager *ociManager) Pack(ctx context.Context, entity component.Component, opts ...packmanager.PackOption) ([]pack.Package, error) {
+func (manager *OCIManager) Pack(ctx context.Context, entity component.Component, opts ...packmanager.PackOption) ([]pack.Package, error) {
 	targ, ok := entity.(target.Target)
 	if !ok {
 		return nil, fmt.Errorf("entity is not Unikraft target")
@@ -233,7 +241,7 @@ func (manager *ociManager) Pack(ctx context.Context, entity component.Component,
 }
 
 // Unpack implements packmanager.PackageManager
-func (manager *ociManager) Unpack(ctx context.Context, entity pack.Package, opts ...packmanager.UnpackOption) ([]component.Component, error) {
+func (manager *OCIManager) Unpack(ctx context.Context, entity pack.Package, opts ...packmanager.UnpackOption) ([]component.Component, error) {
 	return nil, fmt.Errorf("not implemented: oci.manager.Unpack")
 }
 
@@ -355,7 +363,7 @@ func processV1IndexManifests(ctx context.Context, handle handler.Handler, fullre
 }
 
 // Catalog implements packmanager.PackageManager
-func (manager *ociManager) Catalog(ctx context.Context, qopts ...packmanager.QueryOption) ([]pack.Package, error) {
+func (manager *OCIManager) Catalog(ctx context.Context, qopts ...packmanager.QueryOption) ([]pack.Package, error) {
 	query := packmanager.NewQuery(qopts...)
 
 	// Do not perform a search if a query for a specific type is requested and it
@@ -671,13 +679,13 @@ returnPacks:
 }
 
 // SetSources implements packmanager.PackageManager
-func (manager *ociManager) SetSources(_ context.Context, sources ...string) error {
+func (manager *OCIManager) SetSources(_ context.Context, sources ...string) error {
 	manager.registries = sources
 	return nil
 }
 
 // AddSource implements packmanager.PackageManager
-func (manager *ociManager) AddSource(ctx context.Context, source string) error {
+func (manager *OCIManager) AddSource(ctx context.Context, source string) error {
 	if manager.registries == nil {
 		manager.registries = make([]string, 0)
 	}
@@ -688,7 +696,7 @@ func (manager *ociManager) AddSource(ctx context.Context, source string) error {
 }
 
 // Delete implements packmanager.PackageManager.
-func (manager *ociManager) Delete(ctx context.Context, qopts ...packmanager.QueryOption) error {
+func (manager *OCIManager) Delete(ctx context.Context, qopts ...packmanager.QueryOption) error {
 	packs, err := manager.Catalog(ctx, qopts...)
 	if err != nil {
 		return err
@@ -706,7 +714,7 @@ func (manager *ociManager) Delete(ctx context.Context, qopts ...packmanager.Quer
 }
 
 // RemoveSource implements packmanager.PackageManager
-func (manager *ociManager) RemoveSource(ctx context.Context, source string) error {
+func (manager *OCIManager) RemoveSource(ctx context.Context, source string) error {
 	for i, needle := range manager.registries {
 		if needle == source {
 			ret := make([]string, 0)
@@ -720,7 +728,7 @@ func (manager *ociManager) RemoveSource(ctx context.Context, source string) erro
 }
 
 // IsCompatible implements packmanager.PackageManager
-func (manager *ociManager) IsCompatible(ctx context.Context, source string, qopts ...packmanager.QueryOption) (packmanager.PackageManager, bool, error) {
+func (manager *OCIManager) IsCompatible(ctx context.Context, source string, qopts ...packmanager.QueryOption) (packmanager.PackageManager, bool, error) {
 	ctx, handle, err := manager.handle(ctx)
 	if err != nil {
 		return nil, false, err
@@ -869,11 +877,11 @@ func (manager *ociManager) IsCompatible(ctx context.Context, source string, qopt
 }
 
 // From implements packmanager.PackageManager
-func (manager *ociManager) From(pack.PackageFormat) (packmanager.PackageManager, error) {
+func (manager *OCIManager) From(pack.PackageFormat) (packmanager.PackageManager, error) {
 	return nil, fmt.Errorf("not possible: oci.manager.From")
 }
 
 // Format implements packmanager.PackageManager
-func (manager *ociManager) Format() pack.PackageFormat {
+func (manager *OCIManager) Format() pack.PackageFormat {
 	return OCIFormat
 }

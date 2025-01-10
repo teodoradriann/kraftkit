@@ -64,7 +64,7 @@ func (provider TarballProvider) Manifests() ([]*Manifest, error) {
 			Origin:   provider.path,
 			Channels: []ManifestChannel{
 				{
-					Name:     "default",
+					Name:     provider.mopts.defaultChannelName,
 					Default:  true,
 					Resource: provider.path,
 				},
@@ -73,7 +73,7 @@ func (provider TarballProvider) Manifests() ([]*Manifest, error) {
 	}, nil
 }
 
-func (provider TarballProvider) PullManifest(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) error {
+func (provider TarballProvider) pull(manifest *Manifest, opts ...pack.PullOption) error {
 	popts, err := pack.NewPullOptions(opts...)
 	if err != nil {
 		return err
@@ -102,6 +102,14 @@ func (provider TarballProvider) PullManifest(ctx context.Context, manifest *Mani
 	}
 
 	return nil
+}
+
+func (provider TarballProvider) PullChannel(ctx context.Context, manifest *Manifest, _ *ManifestChannel, opts ...pack.PullOption) error {
+	return provider.pull(manifest, opts...)
+}
+
+func (provider TarballProvider) PullVersion(ctx context.Context, manifest *Manifest, _ *ManifestVersion, opts ...pack.PullOption) error {
+	return provider.pull(manifest, opts...)
 }
 
 func (provider TarballProvider) DeleteManifest(context.Context) error {

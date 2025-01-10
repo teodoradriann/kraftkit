@@ -76,7 +76,7 @@ func (dp DirectoryProvider) Manifests() ([]*Manifest, error) {
 		Origin:   dp.dir,
 		Channels: []ManifestChannel{
 			{
-				Name:     "default",
+				Name:     dp.mopts.defaultChannelName,
 				Default:  true,
 				Resource: dp.dir,
 			},
@@ -86,7 +86,7 @@ func (dp DirectoryProvider) Manifests() ([]*Manifest, error) {
 	return []*Manifest{manifest}, nil
 }
 
-func (dp DirectoryProvider) PullManifest(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) error {
+func (dp DirectoryProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, opts ...pack.PullOption) error {
 	popts, err := pack.NewPullOptions(opts...)
 	if err != nil {
 		return err
@@ -94,11 +94,6 @@ func (dp DirectoryProvider) PullManifest(ctx context.Context, manifest *Manifest
 
 	if len(popts.Workdir()) == 0 {
 		return fmt.Errorf("cannot pull without without working directory")
-	}
-
-	// The directory provider only has one channel, exploit this knowledge
-	if len(manifest.Channels) != 1 {
-		return fmt.Errorf("cannot determine channel for directory provider")
 	}
 
 	local, err := unikraft.PlaceComponent(
@@ -110,7 +105,7 @@ func (dp DirectoryProvider) PullManifest(ctx context.Context, manifest *Manifest
 		return fmt.Errorf("could not place component package: %s", err)
 	}
 
-	f, err := os.Lstat(local)
+	f, err := os.Stat(local)
 	if err != nil && os.IsNotExist(err) {
 		if err := os.MkdirAll(filepath.Dir(local), 0o775); err != nil {
 			return err
@@ -125,7 +120,48 @@ func (dp DirectoryProvider) PullManifest(ctx context.Context, manifest *Manifest
 	}
 
 	// Simply generate a symbolic link to the directory resource
-	if err := os.Symlink(manifest.Channels[0].Resource, local); err != nil {
+	if err := os.Symlink(channel.Resource, local); err != nil {
+		return fmt.Errorf("could not copy directory: %v", err)
+	}
+
+	return nil
+}
+
+func (dp DirectoryProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, opts ...pack.PullOption) error {
+	popts, err := pack.NewPullOptions(opts...)
+	if err != nil {
+		return err
+	}
+
+	if len(popts.Workdir()) == 0 {
+		return fmt.Errorf("cannot pull without without working directory")
+	}
+
+	local, err := unikraft.PlaceComponent(
+		popts.Workdir(),
+		manifest.Type,
+		manifest.Name,
+	)
+	if err != nil {
+		return fmt.Errorf("could not place component package: %s", err)
+	}
+
+	f, err := os.Stat(local)
+	if err != nil && os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(local), 0o775); err != nil {
+			return err
+		}
+	} else if err == nil && f.IsDir() {
+		log.G(ctx).Warnf("local directory already exists: %s", local)
+		return nil
+	} else if err == nil && f.Mode()&os.ModeSymlink == os.ModeSymlink {
+		if err := os.Remove(local); err != nil {
+			return fmt.Errorf("could not remove symlink: %v", err)
+		}
+	}
+
+	// Simply generate a symbolic link to the directory resource
+	if err := os.Symlink(version.Resource, local); err != nil {
 		return fmt.Errorf("could not copy directory: %v", err)
 	}
 

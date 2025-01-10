@@ -100,7 +100,7 @@ func (mp *ManifestProvider) Manifests() ([]*Manifest, error) {
 	return []*Manifest{mp.manifest}, nil
 }
 
-func (mp *ManifestProvider) PullManifest(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) error {
+func (mp *ManifestProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, opts ...pack.PullOption) error {
 	manifest.mopts = mp.manifest.mopts
 
 	// If the user has requested to pull the manifest via git, and it passes,
@@ -111,7 +111,21 @@ func (mp *ManifestProvider) PullManifest(ctx context.Context, manifest *Manifest
 		}
 	}
 
-	return pullArchive(ctx, manifest, opts...)
+	return pullArchive(ctx, manifest, channel.Resource, channel.Sha256, opts...)
+}
+
+func (mp *ManifestProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, opts ...pack.PullOption) error {
+	manifest.mopts = mp.manifest.mopts
+
+	// If the user has requested to pull the manifest via git, and it passes,
+	// great, otherwise fall back to archive pull.
+	if useGit {
+		if err := pullGit(ctx, manifest, opts...); err == nil {
+			return nil
+		}
+	}
+
+	return pullArchive(ctx, manifest, version.Resource, version.Sha256, opts...)
 }
 
 func (mp *ManifestProvider) DeleteManifest(ctx context.Context) error {
@@ -427,8 +441,8 @@ func findManifestsFromSource(ctx context.Context, lastSource, source string, mop
 	return manifests, nil
 }
 
-// WriteToFile saves the manifest as a YAML format file at the given path
-func (m Manifest) WriteToFile(path string) error {
+// Save saves the manifest as a YAML format file at the given path
+func (m Manifest) SaveTo(path string) error {
 	// Open the file (create if not present)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {

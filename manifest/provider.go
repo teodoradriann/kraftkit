@@ -21,8 +21,11 @@ type Provider interface {
 	// Provider
 	Manifests() ([]*Manifest, error)
 
-	// PullManifest from the provider.
-	PullManifest(context.Context, *Manifest, ...pack.PullOption) error
+	// PullChannel a specific channel from the provider.
+	PullChannel(context.Context, *Manifest, *ManifestChannel, ...pack.PullOption) error
+
+	// PullVersion a specific version from the provider.
+	PullVersion(context.Context, *Manifest, *ManifestVersion, ...pack.PullOption) error
 
 	// DeleteManifest deletes the artifact based on the provider's implementation.
 	DeleteManifest(context.Context) error
