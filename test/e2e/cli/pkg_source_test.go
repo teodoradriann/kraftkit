@@ -56,7 +56,7 @@ var _ = Describe("kraft pkg source", func() {
 				}
 				Expect(err).ToNot(HaveOccurred())
 			})
-			It("should create the config file, add the default manifests, and the new link, and print nothing", func() {
+			It("should create the config file, and the new link, and print nothing", func() {
 				cmd.Args = append(cmd.Args, "--force")
 				cmd.Args = append(cmd.Args, "https://example.com")
 				err := cmd.Run()
@@ -109,12 +109,11 @@ var _ = Describe("kraft pkg source", func() {
 				cfgMapUnikernelManifests, ok := cfgMapUnikernel["manifests"].([]interface{})
 				Expect(ok).To(BeTrue())
 
-				// Check if the default manifests are present and in the first position
-				Expect(cfgMapUnikernelManifests).To(HaveLen(2))
-				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://manifests.kraftkit.sh/index.yaml"))
+				// Check if there is only a single manifest (since it's an unseeded config file)
+				Expect(cfgMapUnikernelManifests).To(HaveLen(1))
 
 				// Check if the config file contains the new link
-				Expect(cfgMapUnikernelManifests[1]).To(Equal("https://example.com"))
+				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://example.com"))
 
 				// Check if stdout is empty
 				Expect(stdout.String()).To(BeEmpty())
@@ -196,13 +195,12 @@ var _ = Describe("kraft pkg source", func() {
 				cfgMapUnikernelManifests, ok := cfgMapUnikernel["manifests"].([]interface{})
 				Expect(ok).To(BeTrue())
 
-				// Check if the default manifests are present and in the first position
-				Expect(cfgMapUnikernelManifests).To(HaveLen(3))
-				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://manifests.kraftkit.sh/index.yaml"))
+				// Check if the default manifests are present
+				Expect(cfgMapUnikernelManifests).To(HaveLen(2))
 
 				// Check if the config file contains the new link
-				Expect(cfgMapUnikernelManifests[1]).To(Equal("https://example1.com"))
-				Expect(cfgMapUnikernelManifests[2]).To(Equal("https://example2.com"))
+				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://example1.com"))
+				Expect(cfgMapUnikernelManifests[1]).To(Equal("https://example2.com"))
 
 				// Check if stdout is empty
 				Expect(stdout.String()).To(BeEmpty())
@@ -321,14 +319,13 @@ var _ = Describe("kraft pkg source", func() {
 				cfgMapUnikernelManifests, ok := cfgMapUnikernel["manifests"].([]interface{})
 				Expect(ok).To(BeTrue())
 
-				// Check if the default manifests are present and in the first position
-				Expect(cfgMapUnikernelManifests).To(HaveLen(4))
-				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://manifests.kraftkit.sh/index.yaml"))
+				// Check if the default manifests are present
+				Expect(cfgMapUnikernelManifests).To(HaveLen(3))
 
 				// Check if the config file contains the new links
-				Expect(cfgMapUnikernelManifests[1]).To(Equal("https://example1.com"))
-				Expect(cfgMapUnikernelManifests[2]).To(Equal("https://example2.com"))
-				Expect(cfgMapUnikernelManifests[3]).To(Equal("https://example3.com"))
+				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://example1.com"))
+				Expect(cfgMapUnikernelManifests[1]).To(Equal("https://example2.com"))
+				Expect(cfgMapUnikernelManifests[2]).To(Equal("https://example3.com"))
 
 				// Check if stdout is empty
 				Expect(stdout.String()).To(BeEmpty())
@@ -392,11 +389,10 @@ var _ = Describe("kraft pkg source", func() {
 				Expect(ok).To(BeTrue())
 
 				// Check if the default manifests are present and in the first position
-				Expect(cfgMapUnikernelManifests).To(HaveLen(2))
-				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://manifests.kraftkit.sh/index.yaml"))
+				Expect(cfgMapUnikernelManifests).To(HaveLen(1))
 
 				// Check if the config file contains the new link
-				Expect(cfgMapUnikernelManifests[1]).To(Equal("https://example.com"))
+				Expect(cfgMapUnikernelManifests[0]).To(Equal("https://example.com"))
 
 				// Check if stdout contains the warning message
 				Expect(stdout.String()).To(MatchRegexp(`^{"level":"warning","msg":"manifest already saved: https://example\.com"}\n$`))

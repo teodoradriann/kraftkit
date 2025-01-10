@@ -67,7 +67,11 @@ func NewManifestManager(ctx context.Context, opts ...ManifestManagerOption) (*Ma
 	}
 
 	if len(manager.manifests) == 0 {
-		manager.manifests = config.G[config.KraftKit](ctx).Unikraft.Manifests
+		if len(config.G[config.KraftKit](ctx).Unikraft.Manifests) == 0 {
+			manager.manifests = []string{config.DefaultManifestIndex}
+		} else {
+			manager.manifests = config.G[config.KraftKit](ctx).Unikraft.Manifests
+		}
 	}
 
 	if manager.defaultChannelName == "" {

@@ -64,10 +64,6 @@ func NewDefaultKraftKitConfig() (*KraftKit, error) {
 		c.Paths.Sources = filepath.Join(DataDir(), "sources")
 	}
 
-	if len(c.Unikraft.Manifests) == 0 {
-		c.Unikraft.Manifests = append(c.Unikraft.Manifests, DefaultManifestIndex)
-	}
-
 	return c, nil
 }
 
