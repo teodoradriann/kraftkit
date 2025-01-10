@@ -90,6 +90,8 @@ func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
 		WithDefaultChannelName(m.defaultChannelName),
 	}
 
+	all := map[string]*Manifest{}
+
 	for _, manipath := range m.manifests {
 		// If the path of the manipath is the same as the current manifest or it
 		// resides in the same directory as KraftKit's configured path for manifests
@@ -108,7 +110,49 @@ func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
 			log.G(ctx).Warnf("%s", err)
 		}
 
-		index.Manifests = append(index.Manifests, manifests...)
+		// Merge manifests
+		for _, manifest := range manifests {
+			if _, ok := all[manifest.Name]; !ok {
+				all[manifest.Name] = manifest
+			}
+
+			// Merge channels
+			for _, channel := range manifest.Channels {
+				found := false
+				for _, c := range all[manifest.Name].Channels {
+					if c.Name == channel.Name {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					all[manifest.Name].Channels = append(all[manifest.Name].Channels, channel)
+				}
+			}
+
+			// Merge versions
+			for _, version := range manifest.Versions {
+				found := false
+				for _, v := range all[manifest.Name].Versions {
+					if v.Version == version.Version {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					all[manifest.Name].Versions = append(all[manifest.Name].Versions, version)
+				}
+			}
+
+			all[manifest.Name].Origin = manipath
+		}
+
+	}
+
+	for _, manifest := range all {
+		index.Manifests = append(index.Manifests, manifest)
 	}
 
 	// Sort manifests by name
