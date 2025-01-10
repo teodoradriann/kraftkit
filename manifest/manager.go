@@ -497,6 +497,7 @@ func (m *ManifestManager) IsCompatible(ctx context.Context, source string, qopts
 
 	if _, err := NewProvider(ctx, source,
 		WithUpdate(packmanager.NewQuery(qopts...).Remote()),
+		WithAuthConfig(m.auths),
 	); err != nil {
 		return nil, false, fmt.Errorf("incompatible source: %w", err)
 	}
