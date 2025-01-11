@@ -42,7 +42,7 @@ type DeployOptions struct {
 	Domain              []string                       `local:"true" long:"domain" short:"d" usage:"Set the domain names for the service"`
 	DotConfig           string                         `long:"config" short:"c" usage:"Override the path to the KConfig .config file"`
 	Entrypoint          types.ShellCommand             `local:"true" long:"entrypoint" usage:"Set the entrypoint for the instance"`
-	Env                 []string                       `local:"true" long:"env" short:"e" usage:"Environmental variables"`
+	Env                 []string                       `local:"true" long:"env" short:"e" usage:"Environmental variables" split:"false"`
 	Features            []string                       `local:"true" long:"feature" usage:"Specify the special features to enable"`
 	Follow              bool                           `local:"true" long:"follow" short:"f" usage:"Follow the logs of the instance"`
 	ForcePull           bool                           `long:"force-pull" usage:"Force pulling packages before building"`
