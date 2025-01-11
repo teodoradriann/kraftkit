@@ -289,11 +289,13 @@ func (app *application) MergeTemplate(ctx context.Context, merge Application) (A
 		}
 	}
 
-	// TODO(nderjung): This entire method and procedure needs to be re-thought to
-	// be better extensible.  For now, it is unused.  We can safely cast this:
-	app.targets = []*target.TargetConfig{}
-	for _, t := range merge.Targets() {
-		app.targets = append(app.targets, t.(*target.TargetConfig))
+	// Only merge targets if the application has no targets, aka prioritize the
+	// application's targets over the template's targets.
+	if len(app.targets) == 0 {
+		app.targets = []*target.TargetConfig{}
+		for _, t := range merge.Targets() {
+			app.targets = append(app.targets, t.(*target.TargetConfig))
+		}
 	}
 
 	for id, ext := range merge.Extensions() {
