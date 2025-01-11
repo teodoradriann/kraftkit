@@ -67,23 +67,10 @@ func NewManifestManager(ctx context.Context, opts ...ManifestManagerOption) (*Ma
 	}
 
 	if len(manager.manifests) == 0 {
-		// Populate the internal list of manifests with locally saved manifests
-		for _, manifest := range config.G[config.KraftKit](ctx).Unikraft.Manifests {
-			// Use implicit knowledge about the fact that by default the official
-			// manifest is a well-known manifest and does not need the `IsCompatible`
-			// check, speeding up the general initialization of this method.
-			if manifest == config.DefaultManifestIndex {
-				manager.manifests = append(manager.manifests, manifest)
-				continue
-			}
-
-			if _, compatible, _ := manager.IsCompatible(ctx, manifest,
-				// During initialization, do not perform a remote check to determine
-				// whether the provided source is compatible.
-				packmanager.WithRemote(false),
-			); compatible {
-				manager.manifests = append(manager.manifests, manifest)
-			}
+		if len(config.G[config.KraftKit](ctx).Unikraft.Manifests) == 0 {
+			manager.manifests = []string{config.DefaultManifestIndex}
+		} else {
+			manager.manifests = config.G[config.KraftKit](ctx).Unikraft.Manifests
 		}
 	}
 
@@ -96,25 +83,6 @@ func NewManifestManager(ctx context.Context, opts ...ManifestManagerOption) (*Ma
 
 // Index retrieves and returns a cache of the upstream manifest registry
 func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
-	if len(m.manifests) == 0 {
-		// In this scenario, re-attempt all manifests provided within the config
-		// space which were not remotely probed during initialization.
-		for _, manifest := range config.G[config.KraftKit](ctx).Unikraft.Manifests {
-			if _, compatible, _ := m.IsCompatible(ctx, manifest,
-				// During initialization, do not perform a remote check to determine
-				// whether the provided source is compatible.
-				packmanager.WithRemote(true),
-			); compatible {
-				m.manifests = append(m.manifests, manifest)
-			}
-		}
-
-		// If the list of manifests is still zero, then there are really no configs.
-		if len(m.manifests) == 0 {
-			return nil, fmt.Errorf("no manifests specified in config")
-		}
-	}
-
 	index := &ManifestIndex{
 		LastUpdated: time.Now(),
 	}
@@ -125,6 +93,8 @@ func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
 		WithUpdate(true),
 		WithDefaultChannelName(m.defaultChannelName),
 	}
+
+	all := map[string]*Manifest{}
 
 	for _, manipath := range m.manifests {
 		// If the path of the manipath is the same as the current manifest or it
@@ -144,7 +114,49 @@ func (m *ManifestManager) Index(ctx context.Context) (*ManifestIndex, error) {
 			log.G(ctx).Warnf("%s", err)
 		}
 
-		index.Manifests = append(index.Manifests, manifests...)
+		// Merge manifests
+		for _, manifest := range manifests {
+			if _, ok := all[manifest.Name]; !ok {
+				all[manifest.Name] = manifest
+			}
+
+			// Merge channels
+			for _, channel := range manifest.Channels {
+				found := false
+				for _, c := range all[manifest.Name].Channels {
+					if c.Name == channel.Name {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					all[manifest.Name].Channels = append(all[manifest.Name].Channels, channel)
+				}
+			}
+
+			// Merge versions
+			for _, version := range manifest.Versions {
+				found := false
+				for _, v := range all[manifest.Name].Versions {
+					if v.Version == version.Version {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					all[manifest.Name].Versions = append(all[manifest.Name].Versions, version)
+				}
+			}
+
+			all[manifest.Name].Origin = manipath
+		}
+
+	}
+
+	for _, manifest := range all {
+		index.Manifests = append(index.Manifests, manifest)
 	}
 
 	// Sort manifests by name
