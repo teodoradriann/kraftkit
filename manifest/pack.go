@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"kraftkit.sh/internal/tableprinter"
@@ -98,20 +97,8 @@ func (mp mpack) Size() int64 {
 }
 
 func (mp mpack) Columns() []tableprinter.Column {
-	channels := []string{}
-	for _, channel := range mp.manifest.Channels {
-		channels = append(channels, channel.Name)
-	}
-
-	versions := []string{}
-	for _, version := range mp.manifest.Versions {
-		versions = append(versions, version.Version)
-	}
-
 	return []tableprinter.Column{
 		{Name: "description", Value: mp.manifest.Description},
-		{Name: "channels", Value: strings.Join(channels, ", ")},
-		{Name: "versions", Value: strings.Join(versions, ", ")},
 		{Name: "origin", Value: mp.manifest.Origin},
 	}
 }
