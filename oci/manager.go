@@ -232,7 +232,12 @@ func (manager *OCIManager) Pack(ctx context.Context, entity component.Component,
 		return nil, fmt.Errorf("entity is not Unikraft target")
 	}
 
-	pkg, err := NewPackageFromTarget(ctx, targ, opts...)
+	ctx, handle, err := manager.handle(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := NewPackageFromTarget(ctx, handle, targ, opts...)
 	if err != nil {
 		return nil, err
 	}
