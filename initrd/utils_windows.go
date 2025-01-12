@@ -13,5 +13,4 @@ import (
 	"github.com/cavaliergopher/cpio"
 )
 
-func populateCPIO(info fs.FileInfo, header *cpio.Header) {
-}
+func FileInfoToCPIOHeader(info fs.FileInfo, header *cpio.Header) {}

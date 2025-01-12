@@ -14,7 +14,7 @@ import (
 	"kraftkit.sh/cpio"
 )
 
-func populateCPIO(info fs.FileInfo, header *cpio.Header) {
+func FileInfoToCPIOHeader(info fs.FileInfo, header *cpio.Header) {
 	if sysInfo := info.Sys(); sysInfo != nil {
 		if stat, ok := sysInfo.(*syscall.Stat_t); ok {
 			header.Uid = int(stat.Uid)

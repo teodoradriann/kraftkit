@@ -119,7 +119,7 @@ func (initrd *directory) Build(ctx context.Context) (string, error) {
 			}
 
 			// Populate platform specific information
-			populateCPIO(info, header)
+			FileInfoToCPIOHeader(info, header)
 
 			if err := writer.WriteHeader(header); err != nil {
 				return fmt.Errorf("could not write CPIO header: %w", err)
@@ -154,7 +154,7 @@ func (initrd *directory) Build(ctx context.Context) (string, error) {
 		}
 
 		// Populate platform specific information
-		populateCPIO(info, header)
+		FileInfoToCPIOHeader(info, header)
 
 		switch {
 		case info.Mode().IsRegular():

@@ -215,7 +215,7 @@ func (initrd *ociimage) Build(ctx context.Context) (string, error) {
 		}
 
 		// Populate platform specific information
-		populateCPIO(info, cpioHeader)
+		FileInfoToCPIOHeader(info, cpioHeader)
 
 		switch f.FileType {
 		case scfile.TypeBlockDevice:
