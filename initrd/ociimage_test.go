@@ -10,8 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cavaliergopher/cpio"
-
+	"kraftkit.sh/cpio"
 	"kraftkit.sh/initrd"
 )
 
@@ -70,7 +69,7 @@ func TestNewFromOCIImage(t *testing.T) {
 	var gotFiles []string
 
 	for {
-		hdr, err := r.Next()
+		hdr, _, err := r.Next()
 		if err == io.EOF {
 			break
 		}

@@ -10,7 +10,7 @@ package initrd
 import (
 	"io/fs"
 
-	"github.com/cavaliergopher/cpio"
+	"kraftkit.sh/cpio"
 )
 
 func FileInfoToCPIOHeader(info fs.FileInfo, header *cpio.Header) {}
