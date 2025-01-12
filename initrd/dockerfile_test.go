@@ -36,34 +36,6 @@ func TestNewFromDockerfile(t *testing.T) {
 
 	r := cpio.NewReader(openFile(t, irdPath))
 
-	expectHeaders := map[string]cpio.Header{
-		"/a": {
-			Mode: cpio.TypeDir,
-		},
-		"/a/b": {
-			Mode: cpio.TypeDir,
-		},
-		"/a/b/c": {
-			Mode: cpio.TypeDir,
-		},
-		"/a/b/c/d": {
-			Mode: cpio.TypeReg,
-			Size: 13,
-		},
-		"/a/b/c/e-symlink": {
-			Mode:     cpio.TypeSymlink,
-			Linkname: "./d",
-		},
-		"/a/b/c/f-hardlink": {
-			Mode: cpio.TypeReg,
-			Size: 0,
-		},
-		"/a/b/c/g-recursive-symlink": {
-			Mode:     cpio.TypeSymlink,
-			Linkname: ".",
-		},
-	}
-
 	var gotFiles []string
 
 	for {

@@ -205,7 +205,11 @@ func (initrd *ociimage) Build(ctx context.Context) (string, error) {
 			return err
 		}
 
-		internal := filepath.Clean(fmt.Sprintf("/%s", path))
+		internal := fmt.Sprintf("./%s", path)
+		if strings.HasPrefix(internal, ".//") {
+			internal = internal[2:]
+			internal = fmt.Sprintf(".%s", internal)
+		}
 
 		cpioHeader := &cpio.Header{
 			Name:    internal,

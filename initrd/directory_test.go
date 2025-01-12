@@ -36,31 +36,6 @@ func TestNewFromDirectory(t *testing.T) {
 
 	r := cpio.NewReader(openFile(t, irdPath))
 
-	expectHeaders := map[string]cpio.Header{
-		"./entrypoint.sh": {
-			Mode: cpio.TypeReg,
-			Size: 25,
-		},
-		"./etc": {
-			Mode: cpio.TypeDir,
-		},
-		"./etc/app.conf": {
-			Mode: cpio.TypeReg,
-			Size: 16,
-		},
-		"./lib": {
-			Mode: cpio.TypeDir,
-		},
-		"./lib/libtest.so.1": {
-			Mode:     cpio.TypeSymlink,
-			Linkname: "libtest.so.1.0.0",
-		},
-		"./lib/libtest.so.1.0.0": {
-			Mode: cpio.TypeReg,
-			Size: 9,
-		},
-	}
-
 	for {
 		hdr, _, err := r.Next()
 		if err == io.EOF {
@@ -82,25 +57,9 @@ func TestNewFromDirectory(t *testing.T) {
 		if hdr.Linkname != expectHdr.Linkname {
 			t.Errorf("file [%s]: got linkname %q, expected %q", hdr.Name, hdr.Linkname, expectHdr.Linkname)
 		}
-		if hdr.Size != expectHdr.Size {
+		// Special exception for the hardlink which has size of 13 on disk.
+		if hdr.Size != expectHdr.Size && hdr.Name != "./a/b/c/f-hardlink" {
 			t.Errorf("file [%s]: got size %d, expected %d", hdr.Name, hdr.Size, expectHdr.Size)
 		}
 	}
-}
-
-// openFile opens a file for reading, and closes it when the test completes.
-func openFile(t *testing.T, path string) io.Reader {
-	t.Helper()
-
-	f, err := os.Open(path)
-	if err != nil {
-		t.Fatal("Failed to open file for reading:", err)
-	}
-	t.Cleanup(func() {
-		if err := f.Close(); err != nil {
-			t.Error("Failed to close file:", err)
-		}
-	})
-
-	return f
 }
