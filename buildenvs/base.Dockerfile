@@ -8,13 +8,13 @@ ARG QEMU_VERSION=8.2.4
 ARG REGISTRY=kraftkit.sh
 
 FROM ${REGISTRY}/qemu:${QEMU_VERSION}       AS qemu
-FROM ${REGISTRY}/myself:${KRAFTKIT_VERSION} AS kraftkit
+FROM ${REGISTRY}/myself:${KRAFTKIT_VERSION} AS myself
 FROM debian:${DEBIAN_VERSION}               AS base
 
-COPY --from=qemu     /bin/        /usr/local/bin
-COPY --from=qemu     /share/qemu/ /share/qemu
-COPY --from=qemu     /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu
-COPY --from=kraftkit /kraft       /usr/local/bin
+COPY --from=qemu   /bin/                  /usr/local/bin
+COPY --from=qemu   /share/qemu/           /share/qemu
+COPY --from=qemu   /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu
+COPY --from=myself /kraft                 /usr/local/bin
 
 # Install unikraft dependencies
 RUN set -xe; \
