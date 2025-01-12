@@ -79,6 +79,7 @@ base: _WITH_CACHE      := --no-cache
 endif
 base:
 	$(DOCKER) build \
+		--platform $(PLATFORM) \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 		--build-arg KRAFTKIT_VERSION=$(KRAFTKIT_VERSION) \
 		--build-arg QEMU_VERSION=$(QEMU_VERSION) \
