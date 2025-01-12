@@ -34,11 +34,14 @@ RUN set -xe; \
       gcc-12-arm-linux-gnueabihf \
       git \
       libarchive-tools \
+      libbtrfs-dev \
+      libgpgme-dev \
       libncursesw5 \
       libncursesw5-dev \
       make \
       openssh-client \
       patch \
+      pkg-config \
       python3 \
       socat \
       unzip \
