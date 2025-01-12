@@ -3,7 +3,7 @@
 # Licensed under the BSD-3-Clause License (the "License").
 # You may not use this file except in compliance with the License.
 ARG GO_VERSION=1.23.3
-ARG DEBIAN_VERSION=bookworm-20240513
+ARG DEBIAN_VERSION=bookworm-20241223
 ARG KRAFTKIT_VERSION=latest
 ARG QEMU_VERSION=8.2.4
 ARG REGISTRY=kraftkit.sh
