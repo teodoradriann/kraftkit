@@ -484,9 +484,10 @@ func newIndexAndManifestFromRemoteDigest(ctx context.Context, handle handler.Han
 					return fmt.Errorf("could not parse reference: %w", err)
 				}
 
-				spec, err := handle.ResolveManifest(egCtx, "", descriptor.Digest)
+				manifestSpec, imageSpec, err := handle.ResolveManifest(egCtx, "", descriptor.Digest)
 				if err == nil {
-					manifest.manifest = spec
+					manifest.manifest = manifestSpec
+					manifest.config = imageSpec
 					manifest.config.Architecture = descriptor.Platform.Architecture
 					manifest.config.Platform = *descriptor.Platform
 				} else {
@@ -634,6 +635,8 @@ func NewPackageFromOCIManifestDigest(ctx context.Context, handle handler.Handler
 		_, kval := kconfig.NewKeyValue(feature)
 		ocipack.kconfig.Override(kval)
 	}
+
+	ocipack.command = ocipack.manifest.config.Config.Cmd
 
 	return &ocipack, nil
 }
