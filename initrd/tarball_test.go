@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2023, Unikraft GmbH and The KraftKit Authors.
+// Copyright (c) 2025, Unikraft GmbH and The KraftKit Authors.
 // Licensed under the BSD-3-Clause License (the "License").
 // You may not use this file except in compliance with the License.
+
 package initrd_test
 
 import (
@@ -14,14 +15,14 @@ import (
 	"kraftkit.sh/initrd"
 )
 
-func TestNewFromDirectory(t *testing.T) {
-	const rootDir = "testdata/rootfs"
+func TestNewFromTarball(t *testing.T) {
+	const rootfsTarball = "testdata/rootfs.tar.gz"
 
 	ctx := context.Background()
 
-	ird, err := initrd.NewFromDirectory(ctx, rootDir)
+	ird, err := initrd.NewFromTarball(ctx, rootfsTarball)
 	if err != nil {
-		t.Fatal("NewFromDirectory:", err)
+		t.Fatal("NewFromTarball:", err)
 	}
 
 	irdPath, err := ird.Build(ctx)
@@ -36,6 +37,8 @@ func TestNewFromDirectory(t *testing.T) {
 
 	r := cpio.NewReader(openFile(t, irdPath))
 
+	var gotFiles []string
+
 	for {
 		hdr, _, err := r.Next()
 		if err == io.EOF {
@@ -44,6 +47,12 @@ func TestNewFromDirectory(t *testing.T) {
 		if err != nil {
 			t.Fatal("Failed to read next cpio header:", err)
 		}
+
+		if hdr.Name == "/" {
+			continue
+		}
+
+		gotFiles = append(gotFiles, hdr.Name)
 
 		expectHdr, ok := expectHeaders[hdr.Name]
 		if !ok {
@@ -57,9 +66,12 @@ func TestNewFromDirectory(t *testing.T) {
 		if hdr.Linkname != expectHdr.Linkname {
 			t.Errorf("file [%s]: got linkname %q, expected %q", hdr.Name, hdr.Linkname, expectHdr.Linkname)
 		}
-		// Special exception for the hardlink which has size of 13 on disk.
-		if hdr.Size != expectHdr.Size && hdr.Name != "./a/b/c/f-hardlink" {
+		if hdr.Size != expectHdr.Size {
 			t.Errorf("file [%s]: got size %d, expected %d", hdr.Name, hdr.Size, expectHdr.Size)
 		}
+	}
+
+	if len(gotFiles) != len(expectHeaders) {
+		t.Errorf("Expected %d files, got %d: %#v", len(expectHeaders), len(gotFiles), gotFiles)
 	}
 }

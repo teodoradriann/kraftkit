@@ -595,7 +595,7 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			return "", fmt.Errorf("could not read tar header: %w", err)
 		}
 
-		internal := filepath.Clean(fmt.Sprintf("/%s", tarHeader.Name))
+		internal := fmt.Sprintf("./%s", filepath.Clean(tarHeader.Name))
 
 		cpioHeader := &cpio.Header{
 			Name:    internal,

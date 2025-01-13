@@ -71,14 +71,47 @@ func IsTarGz(filepath string) (bool, error) {
 	}
 	defer gzr.Close()
 
-	// Check if the gzip contains a tar archive
-	buf = make([]byte, 512)
-	if _, err := gzr.Read(buf); err != nil {
-		return false, nil // Unable to read gzip contents
+	// Create a tar reader
+	tarReader := tar.NewReader(gzr)
+
+	// Attempt to read the first header in the tarball
+	_, err = tarReader.Next()
+	if err == nil {
+		// Successfully read a header, likely a tarball
+		return true, nil
+	} else if err.Error() == "archive/tar: invalid tar header" {
+		// Invalid tar header indicates the file is not a tarball
+		return false, nil
 	}
 
-	// TAR files typically start with a valid TAR header (file name, etc.)
-	return bytes.HasPrefix(buf[257:], []byte("ustar")), nil
+	// Return other errors (e.g., I/O issues)
+	return false, fmt.Errorf("error reading file: %v", err)
+}
+
+// IsTar checks if a file is a valid tarball.
+func IsTar(filePath string) (bool, error) {
+	// Open the file
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to open file: %v", err)
+	}
+	defer file.Close()
+
+	// Create a tar reader
+	tarReader := tar.NewReader(file)
+
+	// Attempt to read the first header in the tarball
+	_, err = tarReader.Next()
+	if err == nil {
+		// Successfully read a header, likely a tarball
+		return true, nil
+	} else if err.Error() == "archive/tar: invalid tar header" {
+		// Invalid tar header indicates the file is not a tarball
+		return false, nil
+	}
+
+	// Return other errors (e.g., I/O issues)
+	return false, fmt.Errorf("error reading file: %v", err)
 }
 
 // Untar unarchives a tarball which has been gzip compressed

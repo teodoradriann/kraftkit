@@ -10,8 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cavaliergopher/cpio"
-
+	"kraftkit.sh/cpio"
 	"kraftkit.sh/initrd"
 )
 
@@ -39,38 +38,10 @@ func TestNewFromOCIImage(t *testing.T) {
 
 	r := cpio.NewReader(openFile(t, irdPath))
 
-	expectHeaders := map[string]cpio.Header{
-		"/a": {
-			Mode: cpio.TypeDir,
-		},
-		"/a/b": {
-			Mode: cpio.TypeDir,
-		},
-		"/a/b/c": {
-			Mode: cpio.TypeDir,
-		},
-		"/a/b/c/d": {
-			Mode: cpio.TypeReg,
-			Size: 13,
-		},
-		"/a/b/c/e-symlink": {
-			Mode:     cpio.TypeSymlink,
-			Linkname: "./d",
-		},
-		"/a/b/c/f-hardlink": {
-			Mode: cpio.TypeReg,
-			Size: 0,
-		},
-		"/a/b/c/g-recursive-symlink": {
-			Mode:     cpio.TypeSymlink,
-			Linkname: ".",
-		},
-	}
-
 	var gotFiles []string
 
 	for {
-		hdr, err := r.Next()
+		hdr, _, err := r.Next()
 		if err == io.EOF {
 			break
 		}
