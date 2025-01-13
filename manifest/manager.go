@@ -311,8 +311,12 @@ func (m *ManifestManager) Catalog(ctx context.Context, qopts ...packmanager.Quer
 	var manifests []*Manifest
 
 	query := packmanager.NewQuery(qopts...)
+	auths := query.Auths()
+	if len(auths) == 0 {
+		auths = m.auths
+	}
 	mopts := []ManifestOption{
-		WithAuthConfig(query.Auths()),
+		WithAuthConfig(auths),
 		WithCacheDir(config.G[config.KraftKit](ctx).Paths.Sources),
 		WithUpdate(query.Remote()),
 		WithDefaultChannelName(m.defaultChannelName),
@@ -507,9 +511,15 @@ func (m *ManifestManager) IsCompatible(ctx context.Context, source string, qopts
 		return m, true, nil
 	}
 
+	query := packmanager.NewQuery(qopts...)
+	auths := query.Auths()
+	if len(auths) == 0 {
+		auths = m.auths
+	}
+
 	if _, err := NewProvider(ctx, source,
 		WithUpdate(packmanager.NewQuery(qopts...).Remote()),
-		WithAuthConfig(m.auths),
+		WithAuthConfig(auths),
 	); err != nil {
 		return nil, false, fmt.Errorf("incompatible source: %w", err)
 	}

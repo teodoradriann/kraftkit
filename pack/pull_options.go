@@ -20,12 +20,8 @@ type PullOptions struct {
 
 // Auths returns the set authentication config for a given domain or nil if the
 // domain was not found.
-func (ppo *PullOptions) Auths(domain string) *config.AuthConfig {
-	if auth, ok := ppo.auths[domain]; ok {
-		return &auth
-	}
-
-	return nil
+func (ppo *PullOptions) Auths() map[string]config.AuthConfig {
+	return ppo.auths
 }
 
 // OnProgress calls (if set) an embedded progress function which can be used to
