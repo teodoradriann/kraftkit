@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	golog "log"
 	"net/http"
 	"os"
@@ -84,7 +83,7 @@ var (
 
 // NewPackageFromTarget generates an OCI implementation of the pack.Package
 // construct based on an input Application and options.
-func NewPackageFromTarget(ctx context.Context, targ target.Target, opts ...packmanager.PackOption) (pack.Package, error) {
+func NewPackageFromTarget(ctx context.Context, handle handler.Handler, targ target.Target, opts ...packmanager.PackOption) (pack.Package, error) {
 	var err error
 
 	popts := packmanager.NewPackOptions()
@@ -102,6 +101,7 @@ func NewPackageFromTarget(ctx context.Context, targ target.Target, opts ...packm
 		kernelDbg: targ.KernelDbg(),
 		command:   popts.Args(),
 		labels:    popts.Labels(),
+		handle:    handle,
 	}
 
 	// It is possible that `NewPackageFromTarget` is called with an existing
@@ -124,35 +124,6 @@ func NewPackageFromTarget(ctx context.Context, targ target.Target, opts ...packm
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse image reference: %w", err)
-	}
-
-	if contAddr := config.G[config.KraftKit](ctx).ContainerdAddr; len(contAddr) > 0 {
-		namespace := DefaultNamespace
-		if n := os.Getenv("CONTAINERD_NAMESPACE"); n != "" {
-			namespace = n
-		}
-
-		log.G(ctx).
-			WithField("addr", contAddr).
-			WithField("namespace", namespace).
-			Debug("packaging via containerd")
-
-		ctx, ocipack.handle, err = handler.NewContainerdHandler(ctx, contAddr, namespace, config.G[config.KraftKit](ctx).Auth)
-	} else {
-		if gerr := os.MkdirAll(config.G[config.KraftKit](ctx).RuntimeDir, fs.ModeSetgid|0o775); gerr != nil {
-			return nil, fmt.Errorf("could not create local oci cache directory: %w", gerr)
-		}
-
-		ociDir := filepath.Join(config.G[config.KraftKit](ctx).RuntimeDir, "oci")
-
-		log.G(ctx).
-			WithField("path", ociDir).
-			Trace("directory handler")
-
-		ocipack.handle, err = handler.NewDirectoryHandler(ociDir, config.G[config.KraftKit](ctx).Auth)
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	// Prepare a new manifest which contains the individual components of the
