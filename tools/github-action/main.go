@@ -34,6 +34,7 @@ type GithubAction struct {
 	Loglevel   string `long:"loglevel" env:"INPUT_LOGLEVEL" usage:"" default:"info"`
 	RuntimeDir string `long:"runtimedir" env:"INPUT_RUNTIMEDIR" usage:"Path to store runtime artifacts"`
 	Auths      string `long:"auths" env:"INPUT_AUTHS" usage:"Authentication details for services"`
+	Manifests  string `long:"manifests" env:"INPUT_MANIFESTS" usage:"List of Unikraft source manifests"`
 
 	// Project flags
 	Workdir   string `long:"workdir" env:"INPUT_WORKDIR" usage:"Path to working directory (default is cwd)"`
@@ -127,6 +128,14 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		}
 	}
 
+	if opts.Manifests != "" {
+		var manifests []string
+		if err := yaml.Unmarshal([]byte(opts.Manifests), &manifests); err != nil {
+			return fmt.Errorf("could not parse manifests: %w", err)
+		}
+		config.G[config.KraftKit](ctx).Unikraft.Manifests = manifests
+	}
+
 	if len(opts.Workdir) == 0 {
 		opts.Workdir, err = os.Getwd()
 		if err != nil {
@@ -171,6 +180,15 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		}
 	} else {
 		popts = append(popts, app.WithProjectDefaultKraftfiles())
+	}
+
+	if err := bootstrap.InitKraftkit(ctx); err != nil {
+		return fmt.Errorf("could not init kraftkit: %v", err)
+	}
+
+	ctx, err = packmanager.WithDefaultUmbrellaManagerInContext(ctx)
+	if err != nil {
+		return fmt.Errorf("could not init package manager: %v", err)
 	}
 
 	// Initialize at least the configuration options for a project
@@ -313,17 +331,6 @@ func main() {
 
 	// Set up the logger in the context if it is available
 	ctx = log.WithLogger(ctx, logger)
-
-	if err := bootstrap.InitKraftkit(ctx); err != nil {
-		log.G(ctx).Errorf("could not init kraftkit: %v", err)
-		os.Exit(1)
-	}
-
-	ctx, err = packmanager.WithDefaultUmbrellaManagerInContext(ctx)
-	if err != nil {
-		log.G(ctx).Errorf("could not init kraftkit: %v", err)
-		os.Exit(1)
-	}
 
 	os.Exit(cmdfactory.Main(ctx, cmd))
 }
