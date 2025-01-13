@@ -10,16 +10,19 @@ import (
 	"os"
 	"testing"
 
+	"kraftkit.sh/archive"
 	"kraftkit.sh/cpio"
 	"kraftkit.sh/initrd"
 )
 
 func TestNewFromDirectory(t *testing.T) {
-	const rootDir = "testdata/rootfs"
+	if err := archive.Unarchive("testdata/rootfs.tar.gz", "testdata/rootfs"); err != nil {
+		t.Fatal("Unarchive:", err)
+	}
 
 	ctx := context.Background()
 
-	ird, err := initrd.NewFromDirectory(ctx, rootDir)
+	ird, err := initrd.NewFromDirectory(ctx, "testdata/rootfs")
 	if err != nil {
 		t.Fatal("NewFromDirectory:", err)
 	}
@@ -31,6 +34,9 @@ func TestNewFromDirectory(t *testing.T) {
 	t.Cleanup(func() {
 		if err := os.Remove(irdPath); err != nil {
 			t.Fatal("Failed to remove initrd file:", err)
+		}
+		if err := os.RemoveAll("testdata/rootfs"); err != nil {
+			t.Fatal("Failed to remove rootfs directory:", err)
 		}
 	})
 
