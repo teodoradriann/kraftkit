@@ -2,19 +2,19 @@
 # Copyright (c) 2022, NEC Europe Ltd., Unikraft GmbH, and The KraftKit Authors.
 # Licensed under the BSD-3-Clause License (the "License").
 # You may not use this file except in compliance with the License.
-ARG DEBIAN_VERSION=bookworm-20240513
+ARG DEBIAN_VERSION=bookworm-20241223
 ARG KRAFTKIT_VERSION=latest
 ARG QEMU_VERSION=8.2.4
 ARG REGISTRY=kraftkit.sh
 
 FROM ${REGISTRY}/qemu:${QEMU_VERSION}       AS qemu
-FROM ${REGISTRY}/myself:${KRAFTKIT_VERSION} AS kraftkit
+FROM ${REGISTRY}/myself:${KRAFTKIT_VERSION} AS myself
 FROM debian:${DEBIAN_VERSION}               AS base
 
-COPY --from=qemu     /bin/        /usr/local/bin
-COPY --from=qemu     /share/qemu/ /share/qemu
-COPY --from=qemu     /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu
-COPY --from=kraftkit /kraft       /usr/local/bin
+COPY --from=qemu   /bin/                  /usr/local/bin
+COPY --from=qemu   /share/qemu/           /share/qemu
+COPY --from=qemu   /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu
+COPY --from=myself /kraft                 /usr/local/bin
 
 # Install unikraft dependencies
 RUN set -xe; \
@@ -34,11 +34,14 @@ RUN set -xe; \
       gcc-12-arm-linux-gnueabihf \
       git \
       libarchive-tools \
+      libbtrfs-dev \
+      libgpgme-dev \
       libncursesw5 \
       libncursesw5-dev \
       make \
       openssh-client \
       patch \
+      pkg-config \
       python3 \
       socat \
       unzip \
