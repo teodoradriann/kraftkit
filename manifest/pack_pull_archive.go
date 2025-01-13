@@ -75,14 +75,20 @@ func pullArchive(ctx context.Context, manifest *Manifest, resource string, check
 		authHeader := ""
 		authenticated := false
 
-		if auth := popts.Auths(u.Host); auth != nil {
-			if len(auth.User) > 0 {
-				authenticated = true
-				authHeader = "Basic " + base64.StdEncoding.
-					EncodeToString([]byte(auth.User+":"+auth.Token))
-			} else if len(auth.Token) > 0 {
-				authenticated = true
-				authHeader = "Bearer " + auth.Token
+		auths := popts.Auths()
+		if auths == nil {
+			auths = manifest.mopts.auths
+		}
+		if auths != nil {
+			if auth, ok := auths[u.Host]; ok {
+				if len(auth.User) > 0 {
+					authenticated = true
+					authHeader = "Basic " + base64.StdEncoding.
+						EncodeToString([]byte(auth.User+":"+auth.Token))
+				} else if len(auth.Token) > 0 {
+					authenticated = true
+					authHeader = "Bearer " + auth.Token
+				}
 			}
 		}
 
