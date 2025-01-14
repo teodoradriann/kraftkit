@@ -78,6 +78,9 @@ inputs:
     description: If to run the unikernel.
     required: false
     default: "false"
+  memory:
+    description: Set the memory size. String of format "1M"/"1G"/"1K"
+    required: false
   timeout:
     description: Timeout for the unikernel.
     required: false
@@ -87,9 +90,6 @@ inputs:
   #
   args:
     description: Arguments to pass to the unikernel.
-    required: false
-  memory:
-    description: Set the memory size. String of format "1M"/"1G"/"1K"
     required: false
   name:
     description: Set the name of the output.
