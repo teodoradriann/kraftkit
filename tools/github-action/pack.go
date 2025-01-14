@@ -193,19 +193,23 @@ func (opts *GithubAction) packUnikraft(ctx context.Context, output string, forma
 		}
 	}
 
+	var cmdShellArgs []string
+
 	// If no arguments have been specified, use the ones which are default and
 	// that have been included in the package.
 	if len(opts.Args) == 0 {
 		if len(opts.project.Command()) > 0 {
-			opts.Args = opts.project.Command()
+			cmdShellArgs = opts.project.Command()
 		} else if len(opts.target.Command()) > 0 {
-			opts.Args = opts.target.Command()
+			cmdShellArgs = opts.target.Command()
 		}
-	}
 
-	cmdShellArgs, err := shellwords.Parse(strings.Join(opts.Args, " "))
-	if err != nil {
-		return err
+		cmdShellArgs, err = shellwords.Parse(strings.Join(cmdShellArgs, " "))
+		if err != nil {
+			return err
+		}
+	} else {
+		cmdShellArgs = strings.Split(opts.Args, " ")
 	}
 
 	popts := []packmanager.PackOption{
@@ -454,26 +458,28 @@ func (opts *GithubAction) packRuntime(ctx context.Context, output string, format
 		return fmt.Errorf("could not build rootfs: %w", err)
 	}
 
+	args := []string{}
+
 	// If no arguments have been specified, use the ones which are default and
 	// that have been included in the package.
 	if len(opts.Args) == 0 {
 		if len(opts.project.Command()) > 0 {
-			opts.Args = opts.project.Command()
+			args = opts.project.Command()
 		} else if cmds != nil {
-			opts.Args = cmds
+			args = cmds
 		} else if len(targ.Command()) > 0 {
-			opts.Args = targ.Command()
+			args = targ.Command()
 		}
-	}
 
-	args := []string{}
-	// Only parse arguments if they have been provided.
-	if len(opts.Args) > 0 {
-		args, err = shellwords.Parse(fmt.Sprintf("'%s'", strings.Join(opts.Args, "' '")))
+		args, err = shellwords.Parse(fmt.Sprintf("'%s'", strings.Join(args, "' '")))
 		if err != nil {
 			return err
 		}
+	} else {
+		args = strings.Split(opts.Args, " ")
 	}
+
+	fmt.Println("Packaging args:", args)
 
 	labels := opts.project.Labels()
 
@@ -507,6 +513,7 @@ func (opts *GithubAction) packRuntime(ctx context.Context, output string, format
 	}
 
 	if opts.Push {
+		fmt.Println("Pushing")
 		return packaged[0].Push(ctx)
 	}
 
