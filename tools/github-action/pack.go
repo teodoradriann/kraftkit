@@ -459,10 +459,10 @@ func (opts *GithubAction) packRuntime(ctx context.Context, output string, format
 	if len(opts.Args) == 0 {
 		if len(opts.project.Command()) > 0 {
 			opts.Args = opts.project.Command()
-		} else if len(targ.Command()) > 0 {
-			opts.Args = targ.Command()
 		} else if cmds != nil {
 			opts.Args = cmds
+		} else if len(targ.Command()) > 0 {
+			opts.Args = targ.Command()
 		}
 	}
 
