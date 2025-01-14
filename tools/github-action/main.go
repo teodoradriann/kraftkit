@@ -20,6 +20,7 @@ import (
 	"kraftkit.sh/config"
 	"kraftkit.sh/internal/bootstrap"
 	"kraftkit.sh/log"
+	"kraftkit.sh/pack"
 	"kraftkit.sh/packmanager"
 	"kraftkit.sh/unikraft/app"
 	"kraftkit.sh/unikraft/target"
@@ -34,6 +35,7 @@ type GithubAction struct {
 	Loglevel   string `long:"loglevel" env:"INPUT_LOGLEVEL" usage:"" default:"info"`
 	RuntimeDir string `long:"runtimedir" env:"INPUT_RUNTIMEDIR" usage:"Path to store runtime artifacts"`
 	Auths      string `long:"auths" env:"INPUT_AUTHS" usage:"Authentication details for services"`
+	Manifests  string `long:"manifests" env:"INPUT_MANIFESTS" usage:"List of Unikraft source manifests"`
 
 	// Project flags
 	Workdir   string `long:"workdir" env:"INPUT_WORKDIR" usage:"Path to working directory (default is cwd)"`
@@ -127,6 +129,14 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		}
 	}
 
+	if opts.Manifests != "" {
+		var manifests []string
+		if err := yaml.Unmarshal([]byte(opts.Manifests), &manifests); err != nil {
+			return fmt.Errorf("could not parse manifests: %w", err)
+		}
+		config.G[config.KraftKit](ctx).Unikraft.Manifests = manifests
+	}
+
 	if len(opts.Workdir) == 0 {
 		opts.Workdir, err = os.Getwd()
 		if err != nil {
@@ -173,12 +183,68 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		popts = append(popts, app.WithProjectDefaultKraftfiles())
 	}
 
+	if err := bootstrap.InitKraftkit(ctx); err != nil {
+		return fmt.Errorf("could not init kraftkit: %v", err)
+	}
+
+	ctx, err = packmanager.WithDefaultUmbrellaManagerInContext(ctx)
+	if err != nil {
+		return fmt.Errorf("could not init package manager: %v", err)
+	}
+
 	// Initialize at least the configuration options for a project
 	opts.project, err = app.NewProjectFromOptions(ctx, popts...)
 	if err != nil && errors.Is(err, app.ErrNoKraftfile) {
 		return fmt.Errorf("cannot build project directory without a Kraftfile")
 	} else if err != nil {
 		return fmt.Errorf("could not initialize project directory: %w", err)
+	}
+
+	if opts.project.Template() != nil {
+		// All the components of a Unikraft unikernel build begin as remote packages
+		// which need fetch.  The first package which we need to fetch is the template
+		// which will be later merged into the current project.  The `Catalog` method
+		// will search for the package in the package manager.
+		packages, err := packmanager.G(ctx).Catalog(ctx,
+			packmanager.WithName(opts.project.Template().Name()),
+			packmanager.WithTypes(opts.project.Template().Type()),
+			packmanager.WithVersion(opts.project.Template().Version()),
+			packmanager.WithSource(opts.project.Template().Source()),
+			packmanager.WithRemote(true),
+		)
+		if err != nil {
+			return fmt.Errorf("could not fetch project template: %w", err)
+		}
+		if len(packages) == 0 {
+			return fmt.Errorf("could not find template '%s'", opts.project.Template().Name())
+		}
+
+		// Pull all the template's packages into the project's working directory's
+		// build directory.
+		for _, p := range packages {
+			log.G(ctx).WithField("name", p.Name()).Info("pulling package")
+			if err := p.Pull(ctx,
+				pack.WithPullWorkdir(opts.Workdir),
+			); err != nil {
+				return fmt.Errorf("could not pull package %s: %w", p.Name(), err)
+			}
+		}
+
+		// Now that the template has bes been fetched, we must merge it with the
+		// current project.  Start by instating a new project from the template.
+		templateProject, err := app.NewProjectFromOptions(ctx,
+			app.WithProjectWorkdir(opts.project.Template().Path()),
+			app.WithProjectDefaultKraftfiles(),
+		)
+		if err != nil {
+			return fmt.Errorf("could not initialize template project: %w", err)
+		}
+
+		// Now merge the template project with the current project.
+		opts.project, err = opts.project.MergeTemplate(ctx, templateProject)
+		if err != nil {
+			return fmt.Errorf("could not merge template project: %w", err)
+		}
 	}
 
 	// Filter project targets by any provided input arguments
@@ -313,17 +379,6 @@ func main() {
 
 	// Set up the logger in the context if it is available
 	ctx = log.WithLogger(ctx, logger)
-
-	if err := bootstrap.InitKraftkit(ctx); err != nil {
-		log.G(ctx).Errorf("could not init kraftkit: %v", err)
-		os.Exit(1)
-	}
-
-	ctx, err = packmanager.WithDefaultUmbrellaManagerInContext(ctx)
-	if err != nil {
-		log.G(ctx).Errorf("could not init kraftkit: %v", err)
-		os.Exit(1)
-	}
 
 	os.Exit(cmdfactory.Main(ctx, cmd))
 }
