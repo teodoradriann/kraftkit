@@ -59,6 +59,10 @@ func (opts *UnpauseOptions) Pre(cmd *cobra.Command, _ []string) error {
 		opts.Composefile = cmd.Flag("file").Value.String()
 	}
 
+	if cmd.Flag("env-file").Changed {
+		opts.EnvFile = cmd.Flag("env-file").Value.String()
+	}
+
 	log.G(cmd.Context()).WithField("composefile", opts.Composefile).Debug("using")
 	return nil
 }
@@ -69,10 +73,16 @@ func (opts *UnpauseOptions) Run(ctx context.Context, args []string) error {
 		return err
 	}
 
+	var envFiles []string
+	if opts.EnvFile != "" {
+		envFiles = append(envFiles, opts.EnvFile)
+	}
+
 	project, err := compose.NewProjectFromComposeFile(ctx,
 		workdir,
 		opts.Composefile,
-		composespec.WithEnvFiles(opts.EnvFile),
+		composespec.WithEnvFiles(envFiles...),
+		composespec.WithDotEnv,
 	)
 	if err != nil {
 		return err
