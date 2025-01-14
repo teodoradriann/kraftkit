@@ -504,6 +504,13 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 	)
 	initrd.env = img.Metadata.Config.Config.Env
 
+	// Remove the shell command if it is the first argument
+	// TODO(craciunoiuc): Remove this once shell scripts are supported[1]
+	// [1]: https://github.com/unikraft/unikraft/pull/1386
+	if len(initrd.args) >= 2 && initrd.args[0] == "/bin/sh" && initrd.args[1] == "-c" {
+		initrd.args = initrd.args[2:]
+	}
+
 	if err := tempgen.Cleanup(); err != nil {
 		return "", fmt.Errorf("could not cleanup temp dir generator: %w", err)
 	}
