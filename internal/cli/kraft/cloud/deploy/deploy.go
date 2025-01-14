@@ -106,8 +106,11 @@ func NewCmd() *cobra.Command {
 			# Supply arguments to the instance of the existing image
 			$ kraft cloud --metro fra0 deploy -p 443:8080 caddy:latest -- /bin/server --debug
 
-			# Supply arguments to the instance of the project (overriding the cmd):
+			# Supply arguments to the instance of the project (appending to the cmd):
 			$ kraft cloud --metro fra0 deploy -p 443:8080 . -- /bin/server --debug
+
+			# Supply arguments to the instance of the project (overwriting the cmd):
+			$ kraft cloud --metro fra0 deploy -p 443:8080 --entrypoint "/bin/server --debug" .
 
 			# Immediately start following the log tail
 			$ kraft cloud --metro fra0 deploy -p 443:8080 -f caddy:latest
