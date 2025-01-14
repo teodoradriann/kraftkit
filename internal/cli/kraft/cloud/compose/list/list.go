@@ -66,10 +66,16 @@ func (opts *ListOptions) Run(ctx context.Context, args []string) error {
 		workdir = args[0]
 	}
 
+	var envFiles []string
+	if opts.EnvFile != "" {
+		envFiles = append(envFiles, opts.EnvFile)
+	}
+
 	project, err := compose.NewProjectFromComposeFile(ctx,
 		workdir,
 		opts.Composefile,
-		composespec.WithEnvFiles(opts.EnvFile),
+		composespec.WithEnvFiles(envFiles...),
+		composespec.WithDotEnv,
 	)
 	if err != nil {
 		return err
