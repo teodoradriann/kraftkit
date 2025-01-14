@@ -335,10 +335,10 @@ func (p *packagerKraftfileRuntime) Pack(ctx context.Context, opts *PkgOptions, a
 	if len(opts.Args) == 0 {
 		if len(opts.Project.Command()) > 0 {
 			opts.Args = opts.Project.Command()
-		} else if len(targ.Command()) > 0 {
-			opts.Args = targ.Command()
 		} else if cmds != nil {
 			opts.Args = cmds
+		} else if len(targ.Command()) > 0 {
+			opts.Args = targ.Command()
 		}
 	}
 

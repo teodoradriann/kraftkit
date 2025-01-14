@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/mattn/go-shellwords"
 	"github.com/rancher/wrangler/pkg/signals"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -61,11 +62,15 @@ func (opts *GithubAction) execute(ctx context.Context) error {
 		targetName = opts.target.Platform().Name() + "/" + opts.target.Architecture().Name()
 	}
 
+	args, err := shellwords.Parse(opts.Args)
+	if err != nil {
+		return err
+	}
+
 	machine.Spec.Kernel = "project://" + opts.project.Name() + ":" + targetName
 	machine.Spec.Architecture = opts.target.Architecture().Name()
 	machine.Spec.Platform = opts.target.Platform().Name()
-	machine.Spec.ApplicationArgs = opts.Args
-
+	machine.Spec.ApplicationArgs = args
 	machine.Status.KernelPath = opts.target.Kernel()
 
 	if _, err := os.Stat(machine.Status.KernelPath); err != nil && os.IsNotExist(err) {

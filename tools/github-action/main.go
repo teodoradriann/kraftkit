@@ -52,14 +52,14 @@ type GithubAction struct {
 	Timeout uint64 `long:"timeout" env:"INPUT_TIMEOUT" usage:"Timeout for the unikernel"`
 
 	// Packaging flags
-	Args     []string `long:"args" env:"INPUT_ARGS" usage:"Arguments to pass to the unikernel"`
-	Rootfs   string   `long:"rootfs" env:"INPUT_ROOTFS" usage:"Include a rootfs at path"`
-	Memory   string   `long:"memory" env:"INPUT_MEMORY" usage:"Set the memory size"`
-	Name     string   `long:"name" env:"INPUT_NAME" usage:"Set the name of the output"`
-	Output   string   `long:"output" env:"INPUT_OUTPUT" usage:"Set the output path"`
-	Push     bool     `long:"push" env:"INPUT_PUSH" usage:"Push the output"`
-	Strategy string   `long:"strategy" env:"INPUT_STRATEGY" usage:"Merge strategy to use when packaging"`
-	Dbg      bool     `long:"dbg" env:"INPUT_DBG" usage:"Use the debug kernel"`
+	Args     string `long:"args" env:"INPUT_ARGS" usage:"Arguments to pass to the unikernel"`
+	Rootfs   string `long:"rootfs" env:"INPUT_ROOTFS" usage:"Include a rootfs at path"`
+	Memory   string `long:"memory" env:"INPUT_MEMORY" usage:"Set the memory size"`
+	Name     string `long:"name" env:"INPUT_NAME" usage:"Set the name of the output"`
+	Output   string `long:"output" env:"INPUT_OUTPUT" usage:"Set the output path"`
+	Push     bool   `long:"push" env:"INPUT_PUSH" usage:"Push the output"`
+	Strategy string `long:"strategy" env:"INPUT_STRATEGY" usage:"Merge strategy to use when packaging"`
+	Dbg      bool   `long:"dbg" env:"INPUT_DBG" usage:"Use the debug kernel"`
 
 	// Internal attributes
 	project    app.Application
@@ -255,7 +255,7 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		opts.Target,
 	)
 
-	if len(targets) != 1 {
+	if len(targets) > 1 {
 		// TODO(nderjung): We should support building multiple targets in the
 		// future, but for now we disable this ability.  This is largely to do with
 		// package management afterwards which does not yet support multi-target
@@ -264,6 +264,8 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		// unikernel after a successful build via this action, multiple targets
 		// would also fail at this step.
 		return fmt.Errorf("cannot build more than one target using action")
+	} else if len(targets) == 0 {
+		return fmt.Errorf("no targets found")
 	}
 
 	opts.target = targets[0]
