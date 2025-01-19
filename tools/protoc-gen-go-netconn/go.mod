@@ -4,7 +4,7 @@ go 1.23.3
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
-	github.com/golang/glog v1.2.3
+	github.com/golang/glog v1.2.4
 	github.com/iancoleman/strcase v0.3.0
 	google.golang.org/protobuf v1.36.2
 )
