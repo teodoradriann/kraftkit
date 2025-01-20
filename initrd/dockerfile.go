@@ -14,6 +14,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -251,6 +252,17 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 	if connerr != nil {
 		log.G(ctx).Info("creating ephemeral buildkit container")
 
+		buildkitVersion := "latest"
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			for _, dep := range bi.Deps {
+				if dep.Path == "github.com/moby/buildkit" {
+					buildkitVersion = dep.Version
+					break
+				}
+			}
+			log.G(ctx).Debug("could not determine BuildKit version from module list")
+		}
+
 		testcontainers.DefaultLoggingHook = testcontainersLoggingHook
 		printf := &testcontainersPrintf{ctx}
 		testcontainers.Logger = printf
@@ -268,7 +280,7 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			log.G(ctx).Warn("can run BuildKit in a container (recommended for macOS users)")
 			log.G(ctx).Warn("which you can do by running:")
 			log.G(ctx).Warn("")
-			log.G(ctx).Warn("  docker run --rm -d --name buildkit --privileged moby/buildkit:latest")
+			log.G(ctx).Warn("  docker run --rm -d --name buildkit --privileged moby/buildkit:" + buildkitVersion)
 			log.G(ctx).Warn("  export KRAFTKIT_BUILDKIT_HOST=docker-container://buildkit")
 			log.G(ctx).Warn("")
 			log.G(ctx).Warn("For more usage instructions visit: https://unikraft.org/buildkit")
@@ -293,7 +305,7 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 			Logger:  printf,
 			ContainerRequest: testcontainers.ContainerRequest{
 				AlwaysPullImage: true,
-				Image:           "moby/buildkit:v0.18.1",
+				Image:           "moby/buildkit:" + buildkitVersion,
 				WaitingFor:      wait.ForLog(fmt.Sprintf("running server on [::]:%d", port)),
 				Privileged:      true,
 				ExposedPorts:    []string{fmt.Sprintf("%d:%d/tcp", port, port)},
