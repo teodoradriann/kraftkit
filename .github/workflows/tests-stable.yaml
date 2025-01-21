@@ -16,6 +16,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Docker on MacOS
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install docker colima
+          open -a Docker
+          colima start
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
