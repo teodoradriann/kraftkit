@@ -18,14 +18,16 @@ import (
 	"kraftkit.sh/unikraft/target"
 )
 
-type deployerRootfs struct{}
+type deployerRootfs struct {
+	opts *DeployOptions
+}
 
 func (deployer *deployerRootfs) Name() string {
 	return "rootfs"
 }
 
 func (deployer *deployerRootfs) String() string {
-	return ""
+	return fmt.Sprintf("run the supplied rootfs '%s' on '%s' runtime", deployer.opts.Rootfs, deployer.opts.Project.Runtime().Name())
 }
 
 func (deployer *deployerRootfs) Deployable(ctx context.Context, opts *DeployOptions, args ...string) (bool, error) {
@@ -102,6 +104,8 @@ func (deployer *deployerRootfs) Deployable(ctx context.Context, opts *DeployOpti
 			return false, fmt.Errorf("could not create unikernel application: %w", err)
 		}
 	}
+
+	deployer.opts = opts
 
 	return true, nil
 }
