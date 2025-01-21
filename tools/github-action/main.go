@@ -378,6 +378,10 @@ func main() {
 	formatter.FullTimestamp = true
 	formatter.DisableTimestamp = true
 	logger.Formatter = formatter
+	logger.Level, err = logrus.ParseLevel(cfg.Log.Level)
+	if err != nil {
+		logger.Level = logrus.InfoLevel
+	}
 
 	// Set up the logger in the context if it is available
 	ctx = log.WithLogger(ctx, logger)
