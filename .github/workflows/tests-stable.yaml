@@ -20,7 +20,6 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: |
           brew install docker colima
-          open -a Docker
           colima start
 
       - name: Set up QEMU
