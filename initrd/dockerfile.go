@@ -423,16 +423,22 @@ func (initrd *dockerfile) Build(ctx context.Context) (string, error) {
 		sshAgentPath = p
 	}
 	if len(sshAgentPath) > 0 {
-		sshSession, err := sshprovider.NewSSHAgentProvider([]sshprovider.AgentConfig{{
-			Paths: []string{sshAgentPath},
-		}})
-		if err != nil {
-			return "", err
-		}
+		if f, err := os.Stat(sshAgentPath); err == nil && f.Mode().IsRegular() {
+			sshSession, err := sshprovider.NewSSHAgentProvider([]sshprovider.AgentConfig{{
+				Paths: []string{sshAgentPath},
+			}})
+			if err != nil {
+				return "", err
+			}
 
-		session = append(session,
-			sshSession,
-		)
+			session = append(session,
+				sshSession,
+			)
+		} else {
+			log.G(ctx).
+				WithField("path", sshAgentPath).
+				Debug("could not find SSH agent socket")
+		}
 	}
 
 	solveOpt := &client.SolveOpt{
