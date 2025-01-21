@@ -19,7 +19,8 @@ jobs:
       - name: Install Docker on MacOS
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install docker colima
+          brew install docker colima coreutils qemu
+          rm -rf ~/.colima
           colima start
 
       - name: Set up QEMU
