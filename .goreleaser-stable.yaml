@@ -48,7 +48,7 @@ release:
     This is a stable release of kraftkit.
   name_template: 'v{{ .Version }}'
   extra_files:
-    - public.key
+    - name_template: public.key
 
 signs:
   - id: cosign
