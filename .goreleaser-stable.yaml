@@ -10,6 +10,11 @@ version: 2
 #@     "linux": ["amd64"],
 #@   },
 #@ }
+
+before:
+  hooks:
+    - make man
+
 changelog:
   sort: asc
   use: github
@@ -90,6 +95,8 @@ nfpms:
     contents:
       - src: scripts/kraftld
         dst: /usr/local/bin/kraftld
+      - src: ./docs/man/
+        dst: /usr/local/share/man/man1/
 
 aurs:
   - homepage: https://kraftkit.sh
@@ -108,6 +115,8 @@ aurs:
       install -Dm755 "${srcdir}/kraft" "${pkgdir}/usr/bin/kraft"
       # kraftld
       install -Dm755 "${srcdir}/kraftld" "${pkgdir}/usr/bin/kraftld"
+      # man pages
+      install -Dm644 "./docs/man/*" "${pkgdir}/usr/local/share/man/man1"
     commit_author:
       name: Unikraft Bot
       email: monkey+aur@unikraft.io
@@ -129,6 +138,8 @@ nix:
       mkdir -p $out/bin
       cp -vr ./dist/kraft $out/bin/kraft
       cp -vr ./dist/kraftld $out/bin/kraftld
+    extra_install: |-
+      installManPage ./docs/man/*
 
 brews:
   - name: kraftkit
@@ -165,6 +176,8 @@ brews:
     repository:
       owner: unikraft
       name: homebrew-cli
+    extra_install: |-
+      man1.install ./docs/man/*
 
 builds:
 #@ for bin, oses in binaries.items():
