@@ -265,9 +265,15 @@ func (opts *DeployOptions) Run(ctx context.Context, args []string) error {
 	} else if len(candidates) == 1 {
 		d = candidates[0]
 	} else if !config.G[config.KraftKit](ctx).NoPrompt {
-		// Remove any candidates that do not have String prompts.
+		// We explicitly filter out the `rootfs` deployer because it's a more
+		// generic deployer which contextualizes the working directory
+		// without a `Kraftfile` and instead looks for compatible elements
+		// which can be generated into a rootfs, namely a `Dockerfile`.
+		//
+		// In the event that we are in this filter, there is more than one
+		// deployer, i.e. others which are higher priority.
 		candidates = slices.DeleteFunc(candidates, func(d deployer) bool {
-			return d.String() == ""
+			return d.Name() == "rootfs"
 		})
 
 		candidate, err := selection.Select[deployer]("multiple deployable contexts discovered: how would you like to proceed?", candidates...)
