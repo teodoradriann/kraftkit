@@ -17,14 +17,12 @@ import (
 	volumeapi "kraftkit.sh/api/volume/v1alpha1"
 	"kraftkit.sh/config"
 	"kraftkit.sh/log"
-	"kraftkit.sh/machine/platform"
 	"kraftkit.sh/pack"
 	"kraftkit.sh/packmanager"
 	"kraftkit.sh/tui/paraprogress"
 	"kraftkit.sh/tui/processtree"
 	"kraftkit.sh/tui/selection"
 	"kraftkit.sh/unikraft/app"
-	ukarch "kraftkit.sh/unikraft/arch"
 	"kraftkit.sh/unikraft/export/v0/ukrandom"
 	"kraftkit.sh/unikraft/target"
 )
@@ -113,8 +111,8 @@ func (runner *runnerKraftfileRuntime) Prepare(ctx context.Context, opts *RunOpti
 		// Filter project targets by any provided CLI options
 		targets = target.Filter(
 			targets,
-			opts.Architecture,
-			opts.platform.String(),
+			"",
+			"",
 			opts.Target,
 		)
 
@@ -129,22 +127,64 @@ func (runner *runnerKraftfileRuntime) Prepare(ctx context.Context, opts *RunOpti
 			return fmt.Errorf("could not determine what to run based on provided CLI arguments")
 
 		default:
-			targ, err = target.Select(targets)
-			if err != nil {
-				return fmt.Errorf("could not select target: %v", err)
+			if opts.Platform == "" || opts.Platform == "auto" {
+				if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+					return fmt.Errorf("could not detect host platform: %w", err)
+				}
+			}
+
+			if opts.Architecture == "" || opts.Architecture == "auto" {
+				if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+					return fmt.Errorf("could not detect host architecture: %w", err)
+				}
+			}
+
+			// Re-filter targets based on the platform and architecture.
+			targets = target.Filter(
+				targets,
+				opts.Architecture,
+				opts.Platform,
+				opts.Target,
+			)
+
+			switch {
+			case len(targets) == 0:
+				return fmt.Errorf("could not detect any built project targets based on %s/%s", opts.Platform, opts.Architecture)
+
+			case len(targets) == 1:
+				targ = targets[0]
+
+			case config.G[config.KraftKit](ctx).NoPrompt && len(targets) > 1:
+				return fmt.Errorf("could not determine what to run based on provided CLI arguments")
+
+			default:
+				targ, err = target.Select(targets)
+				if err != nil {
+					return fmt.Errorf("could not select target: %v", err)
+				}
 			}
 		}
 	}
 
 	if targ != nil {
+		opts.Platform = targ.Platform().String()
+		if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+			return fmt.Errorf("could not detect platform: %w", err)
+		}
+
+		opts.Architecture = targ.Architecture().String()
+		if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+			return fmt.Errorf("could not detect architecture: %w", err)
+		}
+
 		var kconfigs []string
 		for _, kc := range targ.KConfig() {
 			kconfigs = append(kconfigs, kc.String())
 		}
 
 		qopts = append(qopts,
-			packmanager.WithPlatform(targ.Platform().Name()),
-			packmanager.WithArchitecture(targ.Architecture().Name()),
+			packmanager.WithPlatform(opts.Platform),
+			packmanager.WithArchitecture(opts.Architecture),
 			packmanager.WithKConfig(kconfigs),
 		)
 	}
@@ -198,21 +238,16 @@ func (runner *runnerKraftfileRuntime) Prepare(ctx context.Context, opts *RunOpti
 		// platform and architecture and have received multiple options.  Begin by
 		// filtering based on the host platform and architecture.
 
-		if opts.Architecture == "" {
-			opts.Architecture, err = ukarch.HostArchitecture()
-			if err != nil {
-				return fmt.Errorf("could not get host architecture: %w", err)
+		if opts.Platform == "" || opts.Platform == "auto" {
+			if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+				return fmt.Errorf("could not detect host platform: %w", err)
 			}
-			log.G(ctx).WithField("arch", opts.Architecture).Info("using")
 		}
-		if opts.Platform == "" {
-			plat, _, err := platform.Detect(ctx)
-			if err != nil {
-				return fmt.Errorf("could not get host platform: %w", err)
-			}
 
-			opts.Platform = plat.String()
-			log.G(ctx).WithField("plat", opts.Platform).Info("using")
+		if opts.Architecture == "" || opts.Architecture == "auto" {
+			if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+				return fmt.Errorf("could not detect host architecture: %w", err)
+			}
 		}
 
 		compatible := []pack.Package{}

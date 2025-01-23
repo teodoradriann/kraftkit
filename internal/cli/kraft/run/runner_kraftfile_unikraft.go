@@ -107,8 +107,8 @@ func (runner *runnerKraftfileUnikraft) Prepare(ctx context.Context, opts *RunOpt
 	// Filter project targets by any provided CLI options
 	targets = target.Filter(
 		targets,
-		opts.Architecture,
-		opts.platform.String(),
+		"",
+		"",
 		opts.Target,
 	)
 
@@ -130,6 +130,21 @@ func (runner *runnerKraftfileUnikraft) Prepare(ctx context.Context, opts *RunOpt
 			return fmt.Errorf("could not select target: %v", err)
 		}
 	}
+
+	opts.Platform = t.Platform().String()
+	if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+		return fmt.Errorf("could not detect platform: %w", err)
+	}
+
+	opts.Architecture = t.Architecture().String()
+	if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+		return fmt.Errorf("could not detect architecture: %w", err)
+	}
+
+	log.G(ctx).
+		WithField("arch", opts.Architecture).
+		WithField("plat", opts.Platform).
+		Info("using")
 
 	// Provide a meaningful name
 	targetName := t.Name()
