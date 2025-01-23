@@ -125,6 +125,18 @@ func (runner *runnerLinuxu) Prepare(ctx context.Context, opts *RunOptions, machi
 		opts.Platform = "qemu"
 	}
 
+	if opts.Platform == "" || opts.Platform == "auto" {
+		if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+			return fmt.Errorf("could not detect host platform: %w", err)
+		}
+	}
+
+	if opts.Architecture == "" || opts.Architecture == "auto" {
+		if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+			return fmt.Errorf("could not detect host architecture: %w", err)
+		}
+	}
+
 	loader, err := runtime.NewRuntime(ctx, opts.Runtime,
 		runtime.WithPlatform(opts.Platform),
 		runtime.WithArchitecture(opts.Architecture),

@@ -82,8 +82,6 @@ func (runner *runnerPackage) Runnable(ctx context.Context, opts *RunOptions, arg
 
 	pm, compatible, err := runner.pm.IsCompatible(ctx,
 		runner.packName,
-		packmanager.WithArchitecture(opts.Architecture),
-		packmanager.WithPlatform(opts.platform.String()),
 		packmanager.WithRemote(true),
 	)
 	if err == nil && compatible {
@@ -109,7 +107,7 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 	if len(opts.Architecture) > 0 {
 		qopts = append(qopts, packmanager.WithArchitecture(opts.Architecture))
 	}
-	if len(opts.Platform) > 0 {
+	if len(opts.Platform) > 0 && opts.Platform != "auto" {
 		qopts = append(qopts, packmanager.WithPlatform(opts.Platform))
 	}
 
@@ -125,7 +123,7 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 			processtree.WithHideOnSuccess(true),
 		},
 		processtree.NewProcessTreeItem(
-			fmt.Sprintf("finding %s", runner.packName), "",
+			fmt.Sprintf("finding 1 %s", runner.packName), "",
 			func(ctx context.Context) error {
 				var err error
 				packs, err = runner.pm.Catalog(ctx, qopts...)
@@ -187,6 +185,18 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 		selected = packs[0]
 	} else {
 		found := []pack.Package{}
+
+		if opts.Platform == "" || opts.Platform == "auto" {
+			if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+				return fmt.Errorf("could not detect host platform: %w", err)
+			}
+		}
+
+		if opts.Architecture == "" || opts.Architecture == "auto" {
+			if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+				return fmt.Errorf("could not detect host architecture: %w", err)
+			}
+		}
 
 		for _, p := range packs {
 			pt := p.(target.Target)
@@ -280,6 +290,16 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 	targ, ok := selected.(target.Target)
 	if !ok {
 		return fmt.Errorf("package does not convert to target")
+	}
+
+	opts.Platform = targ.Platform().String()
+	if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+		return fmt.Errorf("could not detect platform: %w", err)
+	}
+
+	opts.Architecture = targ.Architecture().String()
+	if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+		return fmt.Errorf("could not detect architecture: %w", err)
 	}
 
 	log.G(ctx).

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	machineapi "kraftkit.sh/api/machine/v1alpha1"
+	"kraftkit.sh/log"
 	"kraftkit.sh/unikraft"
 	"kraftkit.sh/unikraft/arch"
 )
@@ -53,7 +54,6 @@ func (runner *runnerKernel) Runnable(ctx context.Context, opts *RunOptions, args
 // Prepare implements Runner.
 func (runner *runnerKernel) Prepare(ctx context.Context, opts *RunOptions, machine *machineapi.Machine, args ...string) error {
 	filename := filepath.Base(runner.kernelPath)
-	machine.Spec.Platform = opts.platform.String()
 	machine.Spec.Kernel = "kernel://" + filename
 	machine.Status.KernelPath = runner.kernelPath
 	machine.Spec.ApplicationArgs = runner.args
@@ -71,17 +71,27 @@ func (runner *runnerKernel) Prepare(ctx context.Context, opts *RunOptions, machi
 
 		switch fe.Machine {
 		case elf.EM_X86_64, elf.EM_386:
-			machine.Spec.Architecture = arch.ArchitectureX86_64.String()
+			opts.Architecture = arch.ArchitectureX86_64.String()
 		case elf.EM_ARM:
-			machine.Spec.Architecture = arch.ArchitectureArm.String()
+			opts.Architecture = arch.ArchitectureArm.String()
 		case elf.EM_AARCH64:
-			machine.Spec.Architecture = arch.ArchitectureArm64.String()
+			opts.Architecture = arch.ArchitectureArm64.String()
 		default:
 			return fmt.Errorf("unsupported kernel architecture: %v", fe.Machine.String())
 		}
-	} else {
-		machine.Spec.Architecture = opts.Architecture
 	}
+
+	if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+		return fmt.Errorf("could not detect host platform: %w", err)
+	}
+
+	machine.Spec.Platform = opts.Platform
+	machine.Spec.Architecture = opts.Architecture
+
+	log.G(ctx).
+		WithField("arch", opts.Architecture).
+		WithField("plat", opts.Platform).
+		Info("using")
 
 	return nil
 }

@@ -140,6 +140,7 @@ func NewCmd() *cobra.Command {
 func (opts *RunOptions) Pre(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
+	opts.platform = mplatform.PlatformUnknown
 	opts.Platform = cmd.Flag("plat").Value.String()
 
 	if opts.RunAs == "" || !set.NewStringSet("kernel", "project").Contains(opts.RunAs) {
@@ -195,12 +196,14 @@ func (opts *RunOptions) Pre(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func (opts *RunOptions) discoverMachineController(ctx context.Context) error {
+func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
+	if opts.platform != mplatform.PlatformUnknown {
+		return nil
+	}
+
 	var err error
-
-	opts.platform = mplatform.PlatformUnknown
-
 	var mode mplatform.SystemMode
+
 	defaultPlatform, mode, err := mplatform.Detect(ctx)
 	if err != nil {
 		return err
@@ -220,13 +223,6 @@ func (opts *RunOptions) discoverMachineController(ctx context.Context) error {
 		}
 	}
 
-	if opts.Architecture == "" {
-		opts.Architecture, err = ukarch.HostArchitecture()
-		if err != nil {
-			return fmt.Errorf("could not get host architecture: %w", err)
-		}
-	}
-
 	machineStrategy, ok := mplatform.Strategies()[opts.platform]
 	if !ok {
 		return fmt.Errorf("unsupported platform driver: %s (contributions welcome!)", opts.Platform)
@@ -242,20 +238,27 @@ func (opts *RunOptions) discoverMachineController(ctx context.Context) error {
 	return nil
 }
 
-func (opts *RunOptions) Run(ctx context.Context, args []string) error {
+func (opts *RunOptions) detectAndSetHostArchitecture(ctx context.Context) error {
 	var err error
 
-	if err = opts.discoverMachineController(ctx); err != nil {
-		return err
-	}
-
-	if len(opts.Architecture) > 0 {
-		if _, found := ukarch.ArchitecturesByName()[opts.Architecture]; !found {
-			log.G(ctx).WithFields(logrus.Fields{
-				"arch": opts.Architecture,
-			}).Warn("unknown or incompatible")
+	if opts.Architecture == "" || opts.Architecture == "auto" {
+		opts.Architecture, err = ukarch.HostArchitecture()
+		if err != nil {
+			return fmt.Errorf("could not get host architecture: %w", err)
 		}
 	}
+
+	if _, found := ukarch.ArchitecturesByName()[opts.Architecture]; !found {
+		log.G(ctx).WithFields(logrus.Fields{
+			"arch": opts.Architecture,
+		}).Warn("unknown or incompatible")
+	}
+
+	return nil
+}
+
+func (opts *RunOptions) Run(ctx context.Context, args []string) error {
+	var err error
 
 	machine := &machineapi.Machine{
 		ObjectMeta: metav1.ObjectMeta{},
@@ -264,7 +267,6 @@ func (opts *RunOptions) Run(ctx context.Context, args []string) error {
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{},
 			},
-			Emulation: opts.DisableAccel,
 		},
 	}
 
@@ -335,6 +337,9 @@ func (opts *RunOptions) Run(ctx context.Context, args []string) error {
 	if err := run.Prepare(ctx, opts, machine, args...); err != nil {
 		return err
 	}
+
+	// Set whether to disable acceleration of the CPU.
+	machine.Spec.Emulation = opts.DisableAccel
 
 	// Override with command-line flags
 	if len(opts.KernelArgs) > 0 {
